@@ -15,7 +15,7 @@ EXPOSE 5905
 
 
 RUN apt update && \
-    apt --no-install-recommends install wget unzip winbind samba tigervnc-standalone-server tigervnc-common openbox -y && \
+    apt install wget unzip winbind samba tigervnc-standalone-server tigervnc-common openbox -y && \
     wget --no-check-certificate -O /bin/dumb-init "https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_$(uname -m)"
 
 
