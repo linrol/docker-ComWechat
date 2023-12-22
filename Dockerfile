@@ -1,4 +1,4 @@
-FROM docker.io/zixia/wechat:3.3.0.115
+FROM docker-wechat:latest
 
 USER root
 WORKDIR /
@@ -15,8 +15,8 @@ EXPOSE 5905
 
 
 RUN apt update && \
-    apt --no-install-recommends install wget winbind samba tigervnc-standalone-server tigervnc-common openbox -y && \
-    wget --no-check-certificate -O /bin/dumb-init "https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_x86_64"
+    apt --no-install-recommends install wget unzip winbind samba tigervnc-standalone-server tigervnc-common openbox -y && \
+    wget --no-check-certificate -O /bin/dumb-init "https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_$(uname -m)"
 
 
 COPY wine/simsun.ttc  /home/user/.wine/drive_c/windows/Fonts/simsun.ttc
