@@ -19,9 +19,9 @@ class DockerWechatHook:
             if not COMWECHAT.startswith("https://github.com/ljc545w/ComWeChatRobot/releases/download/"):
                 print("你提供的地址不是 COMWECHAT 仓库的 Release 下载地址，程序将自动退出！")
                 self.exit_container()
-            self.prepare = subprocess.run(['wget', COMWECHAT, '-O', 'comwechat.zip'])
-            self.prepare = subprocess.run(['unzip', '-d', 'comwechat', 'comwechat.zip'])
-            self.prepare = subprocess.run(['mv', '/WeChatHook.exe', '/comwechat/http/WeChatHook.exe'])
+            subprocess.run(['wget', COMWECHAT, '-O', 'comwechat.zip'])
+            subprocess.run(['unzip', '-d', 'comwechat', 'comwechat.zip'])
+            subprocess.run(['mv', '/WeChatHook.exe', '/comwechat/http/WeChatHook.exe'])
             with open("/dll_downloaded.txt", "w") as f:
                 f.write("True\n")
 
@@ -32,8 +32,7 @@ class DockerWechatHook:
         with open('/root/.vnc/passwd', 'wb') as f:
             f.write(passwd_output.stdout)
         os.chmod('/root/.vnc/passwd', 0o700)
-        self.vnc = subprocess.Popen(['/usr/bin/vncserver','-localhost',
-            'no', '-xstartup', '/usr/bin/openbox' ,':5'])
+        self.vnc = subprocess.Popen(['/usr/bin/vncserver','-localhost', 'no', '-xstartup', '/usr/bin/openbox' ,':5'])
 
     def run_wechat(self):
         # if not os.path.exists("/wechat_installed.txt"):
@@ -41,13 +40,13 @@ class DockerWechatHook:
         #     with open("/wechat_installed.txt", "w") as f:
         #         f.write("True\n")
         # self.wechat = subprocess.run(['wine', 'explorer.exe'])
-        self.wechat = subprocess.Popen(['wine','/home/user/.wine/drive_c/Program Files/Tencent/WeChat/WeChat.exe'])
+        self.wechat = subprocess.Popen(['box86','/home/user/wine/bin/wine','/home/user/.wine/drive_c/Program Files/Tencent/WeChat/WeChat.exe'])
         # self.wechat = subprocess.run(['wine','/home/user/.wine/drive_c/Program Files/Tencent/WeChat/WeChat.exe'])
 
     def run_hook(self):
         print("等待 5 秒再 hook")
         time.sleep(5)
-        self.reg_hook = subprocess.run(['wine','/comwechat/http/WeChatHook.exe'])
+        self.reg_hook = subprocess.Popen(['box86','/home/user/wine/bin/wine','/comwechat/http/WeChatHook.exe'])
         # self.reg_hook = subprocess.run(['wine', 'explorer.exe'])
 
     def exit_container(self):
