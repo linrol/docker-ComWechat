@@ -1,17 +1,11 @@
 version: '3.3'
 services:
-    wechatpchook:
+    comwechat:
+        image: docker-comwechat:latest
         container_name: comwechat
         environment:
             - VNCPASS=asdfgh123
             - COMWECHAT=https://github.com/ljc545w/ComWeChatRobot/releases/download/3.7.0.30-0.0.5/3.7.0.30-0.0.5.zip
         ipc: host
-        volumes:
-            - "./volume/WeChat Files/:/home/user/.wine/drive_c/users/user/My Documents/WeChat Files/"
-            - "./volume/Application Data/:/home/user/.wine/drive_c/users/user/Application Data/"
         privileged: true
         network_mode: host
-        image: tomsnow1999/docker-com_wechat_robot:latest
-        # build: 
-        #     context: .
-        #     dockerfile: ./Dockerfile
