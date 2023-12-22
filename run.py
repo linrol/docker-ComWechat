@@ -40,7 +40,7 @@ class DockerWechatHook:
         #     with open("/wechat_installed.txt", "w") as f:
         #         f.write("True\n")
         # self.wechat = subprocess.run(['wine', 'explorer.exe'])
-        self.wechat = subprocess.Popen(['box86','/home/user/wine/bin/wine','/home/user/.wine/drive_c/Program Files/Tencent/WeChat/WeChat.exe'])
+        self.wechat = subprocess.run(['box86','/home/user/wine/bin/wine','/home/user/.wine/drive_c/Program Files/Tencent/WeChat/WeChat.exe'])
         # self.wechat = subprocess.run(['wine','/home/user/.wine/drive_c/Program Files/Tencent/WeChat/WeChat.exe'])
 
     def run_hook(self):
