@@ -74,6 +74,7 @@ class DockerWechatHook:
 
     def run_all_in_one(self):
         print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')+ ' 启动容器中...')
+        self.install_python()
         self.prepare()
         self.run_vnc()
         self.run_wechat()
