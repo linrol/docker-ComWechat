@@ -32,7 +32,7 @@ RUN wget --no-check-certificate -O /Tencent.zip "https://github.com/tom-snow/doc
 # COPY ComWeChatRobot/Release/socket /socket
 COPY WeChatHook.exe /WeChatHook.exe
 
-COPY run.py /run.py
+COPY run_arm.py /run.py
 # https://github.com/tom-snow/wechat-windows-versions/releases/download/v3.7.0.30/WeChatSetup-3.7.0.30.exe
 # COPY WeChatSetup-3.7.0.30.exe WeChatSetup.exe
 
