@@ -1,0 +1,1 @@
+docker build -t linrol/docker-comwechat:latest -f ./Dockerfile.amd .
