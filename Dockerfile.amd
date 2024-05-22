@@ -35,8 +35,8 @@ COPY WeChatHook.exe /WeChatHook.exe
 # wine install python3.8
 COPY skip_wechat_version.py /home/user/.wine/drive_c/skip_wechat_version.py
 RUN wget --no-check-certificate -O /home/user/.wine/drive_c/python-3.8.10.exe "https://www.python.org/ftp/python/3.8.10/python-3.8.10.exe"
-RUN wine /home/user/.wine/drive_c/python-3.8.10.exe /quiet InstallAllUsers=1 PrependPath=1 Include_pip=1
-RUN wine /home/user/.wine/drive_c/Program\ Files/Python38-32/python.exe -m pip --trusted-host pypi.python.org install Pymem
+# RUN wine /home/user/.wine/drive_c/python-3.8.10.exe /quiet InstallAllUsers=1 PrependPath=1 Include_pip=1
+# RUN wine /home/user/.wine/drive_c/Program\ Files/Python38-32/python.exe -m pip --trusted-host pypi.python.org install Pymem
 
 COPY run_amd.py /run.py
 # https://github.com/tom-snow/wechat-windows-versions/releases/download/v3.7.0.30/WeChatSetup-3.7.0.30.exe
