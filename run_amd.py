@@ -11,6 +11,10 @@ class DockerWechatHook:
     def now_exit(self, signum, frame):
         self.exit_container()
 
+    def install_python(self):
+        subprocess.run(['wine','/home/user/.wine/drive_c/python-3.8.10.exe', '/quiet', 'InstallAllUsers=1', 'PrependPath=1', 'Include_pip=1'])
+        subprocess.run(['wine','/home/user/.wine/drive_c/Program\ Files/Python38-32/python.exe -m pip --trusted-host pypi.python.org install Pymem'])
+
     def prepare(self):
         # if not os.path.exists("/comwechat/http/SWeChatRobot.dll"):
         if not os.path.exists("/dll_downloaded.txt"):
