@@ -33,18 +33,23 @@ RUN wget --no-check-certificate -O /Tencent.zip "https://github.com/tom-snow/doc
 COPY WeChatHook.exe /WeChatHook.exe
 
 # wine install python3.8
-COPY skip_wechat_version.py /home/user/.wine/drive_c/skip_wechat_version.py
-RUN wget --no-check-certificate -O /home/user/.wine/drive_c/python-3.8.10.exe "https://www.python.org/ftp/python/3.8.10/python-3.8.10.exe"
-# RUN wine /home/user/.wine/drive_c/python-3.8.10.exe /quiet InstallAllUsers=1 PrependPath=1 Include_pip=1
+USER user
+COPY skip_wechat_version.py /home/user/.wine/drive_c/users/user/skip_wechat_version.py
+COPY python/ /home/user/.wine/drive_c/users/user/python
+RUN ls /home/user/.wine/drive_c/users/user/python/
+RUN sudo wine /home/user/.wine/drive_c/users/user/python/python.exe /home/user/.wine/drive_c/users/user/python/get-pip.py
+RUN sudo sed -i 's/#import site/import site/' /home/user/.wine/drive_c/users/user/python/python38._pth
+RUN sudo wine /home/user/.wine/drive_c/users/user/python/python.exe -m pip --trusted-host pypi.python.org install Pymem
 # RUN wine /home/user/.wine/drive_c/Program\ Files/Python38-32/python.exe -m pip --trusted-host pypi.python.org install Pymem
 
+USER root
 COPY run_amd.py /run.py
 # https://github.com/tom-snow/wechat-windows-versions/releases/download/v3.7.0.30/WeChatSetup-3.7.0.30.exe
 # COPY WeChatSetup-3.7.0.30.exe WeChatSetup.exe
 
 RUN chmod a+x /bin/dumb-init && \
     chmod a+x /run.py && \
-    chmod a+x /home/user/.wine/drive_c/skip_wechat_version.py && \
+    chmod a+x /home/user/.wine/drive_c/users/user/skip_wechat_version.py && \
     rm -rf "/home/user/.wine/drive_c/Program Files/Tencent/" && \
     unzip Tencent.zip && \
     cp -rf /wine/Tencent "/home/user/.wine/drive_c/Program Files/" && \
