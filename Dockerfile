@@ -10,6 +10,7 @@ USER root
 WORKDIR /
 
 ENV WINEPREFIX=/home/user/.wine \
+    WINEDEBUG=-all \
     LANG=zh_CN.UTF-8 \
     LC_ALL=zh_CN.UTF-8 \
     DISPLAY=:5 \

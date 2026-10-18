@@ -15,19 +15,29 @@ class DockerWechatHook:
 
     def skip_version(self):
         print("开始轮询执行跳过版本号检查脚本...", flush=True)
+        time.sleep(2)
         for i in range(30):
+            print(f"[{i+1}/30] 正在尝试修改微信版本号...", flush=True)
+            try:
+                skip_message = subprocess.run(
+                    ['wine', '/home/user/.wine/drive_c/users/user/python/python.exe', '/home/user/.wine/drive_c/users/user/skip_wechat_version.py'],
+                    capture_output=True,
+                    text=True,
+                    timeout=15
+                )
+                output = (skip_message.stdout or "") + (skip_message.stderr or "")
+                if "好了，可以扫码登录了" in output:
+                    print("微信版本号修改成功，可以扫码登录了！", flush=True)
+                    print(output.strip(), flush=True)
+                    break
+                else:
+                    last_line = output.strip().split('\n')[-1] if output.strip() else "无输出"
+                    print(f"[{i+1}/30] 等待微信就绪 ({last_line})，2 秒后重试...", flush=True)
+            except subprocess.TimeoutExpired:
+                print(f"[{i+1}/30] 执行跳过版本脚本超时(15s)，2 秒后重试...", flush=True)
+            except Exception as e:
+                print(f"[{i+1}/30] 执行跳过版本脚本异常: {e}，2 秒后重试...", flush=True)
             time.sleep(2)
-            skip_message = subprocess.run(
-                ['wine', '/home/user/.wine/drive_c/users/user/python/python.exe', '/home/user/.wine/drive_c/users/user/skip_wechat_version.py'],
-                capture_output=True,
-                text=True
-            )
-            if "好了，可以扫码登录了" in skip_message.stdout:
-                print("微信版本号修改成功，可以扫码登录了！", flush=True)
-                print(skip_message.stdout, flush=True)
-                break
-            else:
-                print(f"等待微信模块加载中，重试修改版本号 ({i+1}/30)...", flush=True)
         else:
             print("跳过版本号检查超时，请手动检查微信状态！", flush=True)
 
@@ -65,7 +75,7 @@ class DockerWechatHook:
     def run_hook(self):
         print("等待 5 秒再 hook", flush=True)
         time.sleep(5)
-        self.reg_hook = subprocess.run(['wine','/comwechat/http/WeChatHook.exe'])
+        self.reg_hook = subprocess.Popen(['wine','/comwechat/http/WeChatHook.exe'])
 
     def exit_container(self):
         print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')+ ' 正在退出容器...', flush=True)
@@ -92,7 +102,11 @@ class DockerWechatHook:
         self.run_vnc()
         self.run_wechat()
         self.run_hook()
-        print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')+ ' 感谢使用.', flush=True)
+        print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')+ ' 感谢使用，微信已启动并等待运行.', flush=True)
+        try:
+            self.wechat.wait()
+        except Exception:
+            pass
 
 
 if __name__ == '__main__' :

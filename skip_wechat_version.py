@@ -15,6 +15,8 @@ def fix_version(pm: Pymem):
         if path.endswith("WeChatWin.dll"):
             dll_base = m.lpBaseOfDll
             break
+    if not dll_base:
+        raise Exception("WeChatWin.dll 模块尚未加载")
     for offset in address:
         addr = offset + dll_base
         v = pm.read_uint(addr)
@@ -22,19 +24,19 @@ def fix_version(pm: Pymem):
             continue
         if v != 0x6307001e:  # 不是 3.7.0.30的微信版本
             raise Exception("当前微信版本不是3.7.0.30版本")
-        print(f"地址{hex(addr)}更新数值为{hex(skip_version)}")
+        print(f"地址{hex(addr)}更新数值为{hex(skip_version)}", flush=True)
         pm.write_uint(addr, skip_version)
-    print("好了，可以扫码登录了")
+    print("好了，可以扫码登录了", flush=True)
 
 
 if __name__ == "__main__":
     try:
         if len(sys.argv) > 2:
-            print("ERROR: 输入参数错误, 正确的参数为：[skip_version]")
+            print("ERROR: 输入参数错误, 正确的参数为：[skip_version]", flush=True)
             sys.exit(1)
         if len(sys.argv) > 1:
             skip_version = int(sys.argv[1], 16)
         fix_version(Pymem("WeChat.exe"))
     except Exception as e:
         traceback.print_exc()
-        print(f"{e}，请确认微信程序已经打开！")
+        print(f"{e}，请确认微信程序已经打开！", flush=True)
