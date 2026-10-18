@@ -15,7 +15,7 @@ EXPOSE 5905
 
 
 RUN apt update && \
-    apt --no-install-recommends install wget winbind tigervnc-standalone-server tigervnc-common openbox \
+    apt --no-install-recommends install wget unzip winbind tigervnc-standalone-server tigervnc-common openbox \
     mesa-utils \
     procps \
     pev \
