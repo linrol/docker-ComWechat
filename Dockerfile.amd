@@ -10,6 +10,7 @@ ENV WINEPREFIX=/home/user/.wine \
     DISPLAY=:5 \
     VNCPASS=YourSafeVNCPassword \
     PYTHONUNBUFFERED=1 \
+    PYTHONIOENCODING=utf-8 \
     NO_AT_BRIDGE=1 \
     COMWECHAT=https://github.com/ljc545w/ComWeChatRobot/releases/download/3.7.0.30-0.1.1-pre/3.7.0.30-0.1.1-pre.zip
 

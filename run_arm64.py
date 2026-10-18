@@ -21,8 +21,12 @@ class DockerWechatHook:
         for i in range(30):
             print(f"[{i+1}/30] 正在尝试修改微信版本号...", flush=True)
             try:
-                skip_message = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
-                output = (skip_message.stdout or "") + (skip_message.stderr or "")
+                skip_message = subprocess.run(cmd, capture_output=True, timeout=20)
+                raw_out = (skip_message.stdout or b"") + (skip_message.stderr or b"")
+                try:
+                    output = raw_out.decode("gbk", errors="ignore")
+                except Exception:
+                    output = raw_out.decode("utf-8", errors="ignore")
                 if "好了，可以扫码登录了" in output:
                     print("微信版本号修改成功，可以扫码登录了！", flush=True)
                     print(output.strip(), flush=True)

@@ -22,10 +22,13 @@ class DockerWechatHook:
                 skip_message = subprocess.run(
                     ['wine', '/home/user/.wine/drive_c/users/user/python/python.exe', '/home/user/.wine/drive_c/users/user/skip_wechat_version.py'],
                     capture_output=True,
-                    text=True,
                     timeout=15
                 )
-                output = (skip_message.stdout or "") + (skip_message.stderr or "")
+                raw_out = (skip_message.stdout or b"") + (skip_message.stderr or b"")
+                try:
+                    output = raw_out.decode("gbk", errors="ignore")
+                except Exception:
+                    output = raw_out.decode("utf-8", errors="ignore")
                 if "好了，可以扫码登录了" in output:
                     print("微信版本号修改成功，可以扫码登录了！", flush=True)
                     print(output.strip(), flush=True)

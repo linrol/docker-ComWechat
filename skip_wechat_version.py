@@ -4,6 +4,13 @@ import sys
 import traceback
 from pymem import Pymem
 
+if hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='ignore')
+        sys.stderr.reconfigure(encoding='utf-8', errors='ignore')
+    except Exception:
+        pass
+
 address = [0x2367624, 0x2385AF0, 0x2385C44, 0x239C98C, 0x239EAFC, 0x23A1604]
 skip_version = 0x63090A13   # 3.9.10.19 计算方法：https://jsrun.net/L55Kp
 
