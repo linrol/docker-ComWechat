@@ -40,14 +40,9 @@ ADD WeChatHook.exe /
 # 动态拷贝对应架构的启动脚本，并统一命名为 /run.py
 COPY run_${TARGETARCH}.py /run.py
 
-# 确保用户主目录权限正确，并提前建好 python 运行目录
-RUN mkdir -p /home/user/.wine/drive_c/users/user/python && \
-    chown -R user:user /home/user
-
 # wine install python3.8 (自动下载 Windows 便携版 Python 环境)
-USER user
-COPY --chown=user:user skip_wechat_version.py /home/user/.wine/drive_c/users/user/skip_wechat_version.py
-RUN cd /home/user/.wine/drive_c/users/user/python && \
+COPY skip_wechat_version.py /home/user/.wine/drive_c/users/user/skip_wechat_version.py
+RUN mkdir -p /home/user/.wine/drive_c/users/user/python && \
     wget --no-check-certificate -O /tmp/python.zip "https://www.python.org/ftp/python/3.8.10/python-3.8.10-embed-win32.zip" && \
     unzip -q /tmp/python.zip -d /home/user/.wine/drive_c/users/user/python && \
     wget --no-check-certificate -O /home/user/.wine/drive_c/users/user/python/get-pip.py "https://bootstrap.pypa.io/pip/3.8/get-pip.py" && \
@@ -55,8 +50,6 @@ RUN cd /home/user/.wine/drive_c/users/user/python && \
     wine /home/user/.wine/drive_c/users/user/python/python.exe /home/user/.wine/drive_c/users/user/python/get-pip.py && \
     wine /home/user/.wine/drive_c/users/user/python/python.exe -m pip --trusted-host pypi.python.org install Pymem && \
     rm -f /tmp/python.zip
-
-USER root
 
 # COPY wine/Tencent.zip /Tencent.zip
 RUN wget --no-check-certificate -O /Tencent.zip "https://github.com/tom-snow/docker-ComWechat/releases/download/v0.2_wc3.7.0.30/Tencent.zip" && \
