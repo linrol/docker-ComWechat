@@ -13,6 +13,12 @@ on:
       - 'run_*.py'
       - 'WeChatHook.exe'
   workflow_dispatch:
+    inputs:
+      is_release:
+        description: '是否发布为正式版（勾选后覆盖 latest 并打版本号，默认不覆盖）'
+        required: true
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -42,11 +48,32 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: Get Commit SHA & Version
+      - name: Determine Docker Tags
         id: meta
         run: |
-          echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
-          echo "VERSION=$(cat VERSION)" >> $GITHUB_OUTPUT
+          SHORT_SHA="${GITHUB_SHA::7}"
+          VERSION="$(cat VERSION)"
+          IMAGE="${{ secrets.DOCKER_HUB_USERNAME }}/docker-com_wechat_robot"
+          IS_RELEASE="${{ inputs.is_release }}"
+          echo "Is Release: ${IS_RELEASE}"
+
+          if [ "${IS_RELEASE}" = "true" ]; then
+            echo "Release build: tags include latest, version, and commit sha."
+            {
+              echo "TAGS<<EOF"
+              echo "${IMAGE}:latest"
+              echo "${IMAGE}:${VERSION}"
+              echo "${IMAGE}:${SHORT_SHA}"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
+          else
+            echo "Dev/Push build: tag only commit sha."
+            {
+              echo "TAGS<<EOF"
+              echo "${IMAGE}:${SHORT_SHA}"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
+          fi
 
       - name: Build and push
         id: docker_build
@@ -57,10 +84,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           builder: ${{ steps.buildx.outputs.name }}
           push: true
-          tags: |
-            ${{ secrets.DOCKER_HUB_USERNAME }}/docker-com_wechat_robot:latest
-            ${{ secrets.DOCKER_HUB_USERNAME }}/docker-com_wechat_robot:${{ steps.meta.outputs.SHORT_SHA }}
-            ${{ secrets.DOCKER_HUB_USERNAME }}/docker-com_wechat_robot:${{ steps.meta.outputs.VERSION }}
+          tags: ${{ steps.meta.outputs.TAGS }}
           labels: |
             maintainer=${{ github.event.head_commit.author.email }}
             timestamp=${{ github.event.head_commit.timestamp }}
