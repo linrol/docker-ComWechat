@@ -14,6 +14,8 @@ ENV WINEPREFIX=/home/user/.wine \
     LC_ALL=zh_CN.UTF-8 \
     DISPLAY=:5 \
     VNCPASS=YourSafeVNCPassword \
+    PYTHONUNBUFFERED=1 \
+    NO_AT_BRIDGE=1 \
     COMWECHAT=https://github.com/ljc545w/ComWeChatRobot/releases/download/3.7.0.30-0.1.1-pre/3.7.0.30-0.1.1-pre.zip
 
 # 提示 vnc 使用的端口， dll 的端口自行映射
@@ -27,6 +29,7 @@ RUN if grep -q "bullseye" /etc/os-release 2>/dev/null; then \
     fi && \
     apt update && \
     apt --no-install-recommends install wget unzip winbind tigervnc-standalone-server tigervnc-common openbox \
+    dbus dbus-x11 \
     mesa-utils \
     procps \
     pev \
