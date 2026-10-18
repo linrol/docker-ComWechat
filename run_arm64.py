@@ -14,16 +14,29 @@ class DockerWechatHook:
         self.exit_container()
 
     def skip_version(self):
-        print("开始执行跳过版本号检查脚本")
-        time.sleep(60)
-        skip_message = subprocess.run(['wine','/home/user/.wine/drive_c/users/user/python/python.exe', '/home/user/.wine/drive_c/users/user/skip_wechat_version.py'], capture_output=True, text=True)
-        print(skip_message.stdout)
-        print(skip_message.stderr)
+        print("开始轮询执行跳过版本号检查脚本...")
+        wine_cmd = ['box86', '/home/user/wine/bin/wine'] if os.path.exists('/home/user/wine/bin/wine') else ['wine']
+        cmd = wine_cmd + ['/home/user/.wine/drive_c/users/user/python/python.exe', '/home/user/.wine/drive_c/users/user/skip_wechat_version.py']
+        for i in range(30):
+            time.sleep(2)
+            skip_message = subprocess.run(cmd, capture_output=True, text=True)
+            if "好了，可以扫码登录了" in skip_message.stdout:
+                print("微信版本号修改成功，可以扫码登录了！")
+                print(skip_message.stdout)
+                break
+            else:
+                print(f"等待微信模块加载中，重试修改版本号 ({i+1}/30)...")
+        else:
+            print("跳过版本号检查超时，请手动检查微信状态！")
 
     def prepare(self):
         # if not os.path.exists("/comwechat/http/SWeChatRobot.dll"):
         if not os.path.exists("/dll_downloaded.txt"):
             COMWECHAT = os.environ['COMWECHAT']
+            # NOTE: 当 ComWeChatRobot 的仓库地址变动的话需要修改
+            if not COMWECHAT.startswith("https://github.com/ljc545w/ComWeChatRobot/releases/download/"):
+                print("你提供的地址不是 COMWECHAT 仓库的 Release 下载地址，程序将自动退出！")
+                self.exit_container()
             subprocess.run(['wget', COMWECHAT, '-O', 'comwechat.zip'])
             subprocess.run(['unzip', '-d', 'comwechat', 'comwechat.zip'])
             subprocess.run(['mv', '/WeChatHook.exe', '/comwechat/http/WeChatHook.exe'])
@@ -37,8 +50,7 @@ class DockerWechatHook:
         with open('/root/.vnc/passwd', 'wb') as f:
             f.write(passwd_output.stdout)
         os.chmod('/root/.vnc/passwd', 0o700)
-        self.vnc = subprocess.Popen(['/usr/bin/vncserver','-localhost',
-                                     'no', '-xstartup', '/usr/bin/openbox' ,':5'])
+        self.vnc = subprocess.Popen(['/usr/bin/vncserver','-localhost', 'no', '-xstartup', '/usr/bin/openbox' ,':5'])
 
     def run_wechat(self):
         print("开始运行微信")
@@ -48,13 +60,13 @@ class DockerWechatHook:
         #     with open("/wechat_installed.txt", "w") as f:
         #         f.write("True\n")
         # self.wechat = subprocess.run(['wine', 'explorer.exe'])
-        self.wechat = subprocess.Popen(['wine','/home/user/.wine/drive_c/Program Files/Tencent/WeChat/WeChat.exe'])
+        self.wechat = subprocess.Popen(['box86','/home/user/wine/bin/wine','/home/user/.wine/drive_c/Program Files/Tencent/WeChat/WeChat.exe'])
         # self.wechat = subprocess.run(['wine','/home/user/.wine/drive_c/Program Files/Tencent/WeChat/WeChat.exe'])
 
     def run_hook(self):
         print("等待 5 秒再 hook")
         time.sleep(5)
-        self.reg_hook = subprocess.run(['wine','/comwechat/http/WeChatHook.exe'])
+        self.reg_hook = subprocess.Popen(['box86','/home/user/wine/bin/wine','/comwechat/http/WeChatHook.exe'])
         # self.reg_hook = subprocess.run(['wine', 'explorer.exe'])
 
     def exit_container(self):

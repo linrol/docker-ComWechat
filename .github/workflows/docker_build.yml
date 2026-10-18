@@ -8,62 +8,59 @@ on:
       - .github/workflows/docker_build.yml
       - 'ComWeChatRobot/**'
       - 'wine/**'
-      - 'Dockerfile.amd'
+      - 'Dockerfile'
       - 'VERSION'
-      - 'run.py'
+      - 'run_*.py'
       - 'WeChatHook.exe'
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-        # with:
-        #   lfs: true
-      
-      # - name: Checkout LFS objects
-      #   run: git lfs checkout
-
-      # - name: init submodule
-      #   run: git submodule update --init --recursive
+        uses: actions/checkout@v4
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
 
       - name: Cache Docker layers
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
 
-      - uses: docker/login-action@v1
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: Get Version Tag
-        id: get_version_tag
-        run: echo ::set-output name=VERSION::`cat VERSION`
+      - name: Get Commit SHA & Version
+        id: meta
+        run: |
+          echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+          echo "VERSION=$(cat VERSION)" >> $GITHUB_OUTPUT
 
       - name: Build and push
         id: docker_build
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           context: ./
-          file: ./Dockerfile.amd
-          platforms: linux/arm64,linux/amd64
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
           builder: ${{ steps.buildx.outputs.name }}
           push: true
           tags: |
             ${{ secrets.DOCKER_HUB_USERNAME }}/docker-com_wechat_robot:latest
-            ${{ secrets.DOCKER_HUB_USERNAME }}/docker-com_wechat_robot:${{ steps.get_version_tag.outputs.VERSION }}
+            ${{ secrets.DOCKER_HUB_USERNAME }}/docker-com_wechat_robot:${{ steps.meta.outputs.SHORT_SHA }}
+            ${{ secrets.DOCKER_HUB_USERNAME }}/docker-com_wechat_robot:${{ steps.meta.outputs.VERSION }}
           labels: |
             maintainer=${{ github.event.head_commit.author.email }}
             timestamp=${{ github.event.head_commit.timestamp }}

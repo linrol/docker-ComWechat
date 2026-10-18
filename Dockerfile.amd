@@ -24,7 +24,7 @@ RUN apt update && \
 ADD wine/simsun.ttc /home/user/.wine/drive_c/windows/Fonts/simsun.ttc
 ADD wine/微信.lnk /home/user/.wine/drive_c/users/Public/Desktop/微信.lnk
 ADD wine/system.reg wine/user.reg wine/userdef.reg /home/user/.wine/
-ADD WeChatHook.exe run_amd.py /
+ADD WeChatHook.exe run_amd64.py /
 
 # wine install python3.8
 USER user
@@ -42,7 +42,7 @@ RUN wget --no-check-certificate -O /Tencent.zip "https://github.com/tom-snow/doc
     wget --no-check-certificate -O /bin/dumb-init "https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_x86_64" && \
     mkdir -p "/home/user/WeChat Files" "/home/user/.wine/drive_c/users/user/Application Data" && \
     chmod a+x /bin/dumb-init && \
-    chmod a+x /run_amd.py && \
+    chmod a+x /run_amd64.py && \
     chmod a+x /home/user/.wine/drive_c/users/user/skip_wechat_version.py && \
     rm -rf "/home/user/.wine/drive_c/Program Files/Tencent/" && \
     unzip Tencent.zip && \
@@ -53,4 +53,4 @@ RUN wget --no-check-certificate -O /Tencent.zip "https://github.com/tom-snow/doc
     rm -rf wine Tencent.zip /tmp/*
 
 ENTRYPOINT [ "/bin/dumb-init" ]
-CMD ["/run_amd.py", "start"]
+CMD ["/run_amd64.py", "start"]
