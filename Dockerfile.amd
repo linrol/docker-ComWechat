@@ -14,7 +14,9 @@ ENV WINEPREFIX=/home/user/.wine \
 EXPOSE 5905
 
 
-RUN apt update && \
+RUN (sed -i '/opensuse/d' /etc/apt/sources.list.d/*.list 2>/dev/null || true) && \
+    (rm -f /etc/apt/sources.list.d/*opensuse* 2>/dev/null || true) && \
+    apt update && \
     apt --no-install-recommends install wget unzip winbind tigervnc-standalone-server tigervnc-common openbox \
     mesa-utils \
     procps \
