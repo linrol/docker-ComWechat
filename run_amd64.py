@@ -26,10 +26,16 @@ class DockerWechatHook:
                 )
                 raw_out = (skip_message.stdout or b"") + (skip_message.stderr or b"")
                 try:
-                    output = raw_out.decode("gbk", errors="ignore")
+                    output = raw_out.decode("utf-8")
                 except Exception:
-                    output = raw_out.decode("utf-8", errors="ignore")
-                if "好了，可以扫码登录了" in output:
+                    output = raw_out.decode("gbk", errors="ignore")
+                is_success = (
+                    "好了，可以扫码登录了" in output
+                    or "好了，可以扫码登录了".encode("utf-8") in raw_out
+                    or "好了，可以扫码登录了".encode("gbk") in raw_out
+                    or "濂戒簡" in output
+                )
+                if is_success:
                     print("微信版本号修改成功，可以扫码登录了！", flush=True)
                     print(output.strip(), flush=True)
                     break
