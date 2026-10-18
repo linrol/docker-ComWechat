@@ -34,13 +34,17 @@ ADD WeChatHook.exe /
 # 动态拷贝对应架构的启动脚本，并统一命名为 /run.py
 COPY run_${TARGETARCH}.py /run.py
 
-# wine install python3.8
+# wine install python3.8 (自动下载 Windows 便携版 Python 环境)
 USER user
 COPY skip_wechat_version.py /home/user/.wine/drive_c/users/user/skip_wechat_version.py
-COPY python/ /home/user/.wine/drive_c/users/user/python
-RUN sudo wine /home/user/.wine/drive_c/users/user/python/python.exe /home/user/.wine/drive_c/users/user/python/get-pip.py && \
-    sudo sed -i 's/#import site/import site/' /home/user/.wine/drive_c/users/user/python/python38._pth && \
-    sudo wine /home/user/.wine/drive_c/users/user/python/python.exe -m pip --trusted-host pypi.python.org install Pymem
+RUN mkdir -p /home/user/.wine/drive_c/users/user/python && \
+    wget --no-check-certificate -O /tmp/python.zip "https://www.python.org/ftp/python/3.8.10/python-3.8.10-embed-win32.zip" && \
+    unzip -q /tmp/python.zip -d /home/user/.wine/drive_c/users/user/python && \
+    wget --no-check-certificate -O /home/user/.wine/drive_c/users/user/python/get-pip.py "https://bootstrap.pypa.io/get-pip.py" && \
+    sed -i 's/#import site/import site/' /home/user/.wine/drive_c/users/user/python/python38._pth && \
+    sudo wine /home/user/.wine/drive_c/users/user/python/python.exe /home/user/.wine/drive_c/users/user/python/get-pip.py && \
+    sudo wine /home/user/.wine/drive_c/users/user/python/python.exe -m pip --trusted-host pypi.python.org install Pymem && \
+    rm -f /tmp/python.zip
 
 USER root
 
