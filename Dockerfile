@@ -19,8 +19,12 @@ ENV WINEPREFIX=/home/user/.wine \
 # 提示 vnc 使用的端口， dll 的端口自行映射
 EXPOSE 5905
 
-RUN (sed -i '/opensuse/d' /etc/apt/sources.list.d/*.list 2>/dev/null || true) && \
-    (rm -f /etc/apt/sources.list.d/*opensuse* 2>/dev/null || true) && \
+RUN if grep -q "bullseye" /etc/os-release 2>/dev/null; then \
+        echo "Acquire::Check-Valid-Until false;" > /etc/apt/apt.conf.d/99no-check-valid-until && \
+        sed -i 's|security.debian.org/debian-security|archive.debian.org/debian-security|g' /etc/apt/sources.list && \
+        sed -i '/opensuse/d' /etc/apt/sources.list.d/*.list 2>/dev/null || true && \
+        rm -f /etc/apt/sources.list.d/*opensuse* 2>/dev/null || true; \
+    fi && \
     apt update && \
     apt --no-install-recommends install wget unzip winbind tigervnc-standalone-server tigervnc-common openbox \
     mesa-utils \
