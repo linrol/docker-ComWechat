@@ -46,7 +46,7 @@ COPY skip_wechat_version.py /home/user/.wine/drive_c/users/user/skip_wechat_vers
 RUN mkdir -p /home/user/.wine/drive_c/users/user/python && \
     wget --no-check-certificate -O /tmp/python.zip "https://www.python.org/ftp/python/3.8.10/python-3.8.10-embed-win32.zip" && \
     unzip -q /tmp/python.zip -d /home/user/.wine/drive_c/users/user/python && \
-    wget --no-check-certificate -O /home/user/.wine/drive_c/users/user/python/get-pip.py "https://bootstrap.pypa.io/get-pip.py" && \
+    wget --no-check-certificate -O /home/user/.wine/drive_c/users/user/python/get-pip.py "https://bootstrap.pypa.io/pip/3.8/get-pip.py" && \
     sed -i 's/#import site/import site/' /home/user/.wine/drive_c/users/user/python/python38._pth && \
     wine /home/user/.wine/drive_c/users/user/python/python.exe /home/user/.wine/drive_c/users/user/python/get-pip.py && \
     wine /home/user/.wine/drive_c/users/user/python/python.exe -m pip --trusted-host pypi.python.org install Pymem && \
