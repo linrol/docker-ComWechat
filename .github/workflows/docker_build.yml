@@ -8,7 +8,7 @@ on:
       - .github/workflows/docker_build.yml
       - 'ComWeChatRobot/**'
       - 'wine/**'
-      - 'Dockerfile'
+      - 'Dockerfile.amd'
       - 'VERSION'
       - 'run.py'
       - 'WeChatHook.exe'
@@ -57,7 +57,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: ./
-          file: ./Dockerfile
+          file: ./Dockerfile.amd
           platforms: linux/arm64,linux/amd64
           builder: ${{ steps.buildx.outputs.name }}
           push: true
