@@ -1,7 +1,7 @@
 # docker-ComWechat
-[![docker 镜像](https://dockeri.co/image/tomsnow1999/docker-com_wechat_robot)](https://hub.docker.com/r/tomsnow1999/docker-com_wechat_robot/tags)
+[![docker 镜像](https://dockeri.co/image/linrol/docker-comwechat)](https://hub.docker.com/r/linrol/docker-comwechat/tags)
 
-[![镜像大小](https://badgen.net/docker/size/tomsnow1999/docker-com_wechat_robot)](https://hub.docker.com/r/tomsnow1999/docker-com_wechat_robot/tags)
+[![镜像大小](https://badgen.net/docker/size/linrol/docker-comwechat)](https://hub.docker.com/r/linrol/docker-comwechat/tags)
 
 A docker image for [ComWeChatRobot](https://github.com/ljc545w/ComWeChatRobot)
 
@@ -17,7 +17,7 @@ docker run \
     --privileged \
     -v $(pwd)/volume/WeChat\ Files/:'/home/user/.wine/drive_c/users/user/My Documents/WeChat Files/'  \
     -v $(pwd)/volume/Application\ Data:'/home/user/.wine/drive_c/users/user/Application Data/' \
-    tomsnow1999/docker-com_wechat_robot
+    linrol/docker-comwechat
 ```
 
 ### 参数说明

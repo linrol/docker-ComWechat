@@ -8,9 +8,11 @@ on:
       - .github/workflows/docker_build.yml
       - 'ComWeChatRobot/**'
       - 'wine/**'
+      - 'web_admin/**'
       - 'Dockerfile'
       - 'VERSION'
       - 'run_*.py'
+      - 'skip_wechat_version.py'
       - 'WeChatHook.exe'
   workflow_dispatch:
     inputs:
@@ -53,7 +55,7 @@ jobs:
         run: |
           SHORT_SHA="${GITHUB_SHA::7}"
           VERSION="$(cat VERSION)"
-          IMAGE="${{ secrets.DOCKER_HUB_USERNAME }}/docker-com_wechat_robot"
+          IMAGE="${{ secrets.DOCKER_HUB_USERNAME || 'linrol' }}/docker-comwechat"
           IS_RELEASE="${{ inputs.is_release }}"
           echo "Is Release: ${IS_RELEASE}"
 

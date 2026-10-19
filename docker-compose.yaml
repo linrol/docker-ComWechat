@@ -1,7 +1,7 @@
 version: '3.3'
 services:
     comwechat:
-        image: linrol/docker-com_wechat_robot:latest
+        image: linrol/docker-comwechat:latest
         container_name: comwechat
         restart: always
         environment:
