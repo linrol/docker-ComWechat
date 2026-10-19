@@ -1,11 +1,17 @@
 version: '3.3'
 services:
     comwechat:
-        image: docker-comwechat:latest
+        image: linrol/docker-com_wechat_robot:latest
         container_name: comwechat
+        restart: always
         environment:
             - VNCPASS=asdfgh123
-            - COMWECHAT=https://github.com/ljc545w/ComWeChatRobot/releases/download/3.7.0.30-0.0.5/3.7.0.30-0.0.5.zip
+            - ADMIN_USER=admin
+            - ADMIN_PASS=admin123
+            - WEB_PORT=8000
+            - COMWECHAT=https://github.com/ljc545w/ComWeChatRobot/releases/download/3.7.0.30-0.1.1-pre/3.7.0.30-0.1.1-pre.zip
+        volumes:
+            - ./data:/data
         ipc: host
         privileged: true
         network_mode: host

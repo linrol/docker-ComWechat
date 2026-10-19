@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ComWeChat Robot - 微信机器人控制台</title>
+  <style>
+    :root {
+      --bg-base: #0b0f19;
+      --bg-surface: #111827;
+      --bg-card: #1f2937;
+      --bg-input: #151d2f;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-focus: #10b981;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --accent-wx: #07c160;
+      --accent-primary: #10b981;
+      --accent-glow: rgba(16, 185, 129, 0.25);
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+      --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* 滚动条美化 */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-base); }
+    ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+
+    /* 登录页面 */
+    #login-page {
+      position: fixed; inset: 0; z-index: 9999;
+      background: radial-gradient(circle at 50% 20%, #152238 0%, #0b0f19 70%);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .login-card {
+      background: rgba(17, 24, 39, 0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      width: 100%; max-width: 420px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      text-align: center;
+    }
+    .login-icon {
+      width: 56px; height: 56px; margin: 0 auto 16px;
+      background: linear-gradient(135deg, #07c160, #10b981);
+      border-radius: 14px; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+    .login-icon svg { width: 32px; height: 32px; fill: white; }
+    .login-title { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .login-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 28px; }
+
+    /* 通用表单 */
+    .form-group { text-align: left; margin-bottom: 18px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; }
+    .form-control {
+      width: 100%; padding: 10px 14px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      color: var(--text-main); font-size: 14px;
+      transition: var(--transition);
+    }
+    .form-control:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--accent-glow); }
+    textarea.form-control { resize: vertical; min-height: 80px; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 10px 18px; font-size: 14px; font-weight: 600;
+      border-radius: var(--radius-md); border: none; cursor: pointer;
+      transition: var(--transition); text-decoration: none;
+    }
+    .btn-primary { background: linear-gradient(135deg, #07c160, #10b981); color: white; }
+    .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .btn-secondary { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); }
+    .btn-secondary:hover { background: #374151; }
+    .btn-danger { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .btn-danger:hover { background: #ef4444; color: white; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: var(--radius-sm); }
+    .btn-block { width: 100%; }
+
+    /* 顶栏与布局 */
+    header {
+      height: 64px; background: rgba(17, 24, 39, 0.8);
+      backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-color);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; position: sticky; top: 0; z-index: 100;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-logo {
+      width: 34px; height: 34px; background: linear-gradient(135deg, #07c160, #10b981);
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    }
+    .brand-logo svg { width: 20px; height: 20px; fill: white; }
+    .brand-title { font-size: 16px; font-weight: 700; letter-spacing: -0.2px; }
+
+    .header-actions { display: flex; align-items: center; gap: 16px; }
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border-radius: 20px;
+      font-size: 13px; font-weight: 500;
+      background: rgba(31, 41, 55, 0.8); border: 1px solid var(--border-color);
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-green { background: #10b981; box-shadow: 0 0 10px #10b981; }
+    .dot-red { background: #ef4444; box-shadow: 0 0 10px #ef4444; }
+
+    /* 主体容器与侧边栏 */
+    .app-container { display: flex; flex: 1; height: calc(100vh - 64px); }
+    aside {
+      width: 220px; background: var(--bg-surface);
+      border-right: 1px solid var(--border-color);
+      display: flex; flex-direction: column; padding: 16px 10px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px; border-radius: var(--radius-md);
+      color: var(--text-muted); font-size: 14px; font-weight: 500;
+      cursor: pointer; transition: var(--transition); margin-bottom: 4px;
+      user-select: none;
+    }
+    .nav-item:hover { background: rgba(255, 255, 255, 0.04); color: var(--text-main); }
+    .nav-item.active {
+      background: rgba(16, 185, 129, 0.12); color: #10b981;
+      font-weight: 600; border-left: 3px solid #10b981; border-radius: 2px var(--radius-md) var(--radius-md) 2px;
+    }
+    .nav-item svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+    main { flex: 1; overflow-y: auto; padding: 24px 32px; background: var(--bg-base); }
+
+    /* 通用页面与卡片 */
+    .page-title-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .page-heading { font-size: 20px; font-weight: 700; }
+    .page-subheading { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+    .grid-stats {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px; margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--bg-surface); border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg); padding: 20px;
+      display: flex; align-items: center; gap: 16px;
+      transition: var(--transition);
+    }
+    .stat-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.15); }
+    .stat-icon-wrapper {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .stat-val { font-size: 24px; font-weight: 700; margin-top: 4px; }
+    .stat-lbl { font-size: 12px; color: var(--text-muted); }
+
+    /* 表格与规则卡片 */
+    .card {
+      background: var(--bg-surface); border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg); padding: 20px; margin-bottom: 24px;
+      box-shadow: var(--shadow-card);
+    }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);
+    }
+    .card-title { font-size: 16px; font-weight: 600; }
+
+    .rule-item {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius-md); padding: 16px; margin-bottom: 12px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      transition: var(--transition);
+    }
+    .rule-item:hover { border-color: rgba(255, 255, 255, 0.15); transform: translateY(-1px); }
+    .rule-info { flex: 1; }
+    .rule-name-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .rule-name { font-size: 15px; font-weight: 600; }
+    .badge {
+      display: inline-flex; align-items: center; padding: 2px 8px;
+      border-radius: 4px; font-size: 11px; font-weight: 600;
+    }
+    .badge-regex { background: rgba(147, 51, 234, 0.2); color: #c084fc; border: 1px solid rgba(147, 51, 234, 0.4); }
+    .badge-keyword { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+    .badge-exact { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .badge-success { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .badge-danger { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+
+    .rule-meta { font-size: 13px; color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 16px; }
+    .rule-actions { display: flex; align-items: center; gap: 8px; }
+
+    /* Switch 开关 */
+    .switch {
+      position: relative; display: inline-block; width: 42px; height: 22px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; inset: 0;
+      background-color: #374151; transition: .2s; border-radius: 22px;
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
+      background-color: white; transition: .2s; border-radius: 50%;
+    }
+    input:checked + .slider { background-color: var(--accent-primary); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    /* 模态框 Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px; opacity: 0; pointer-events: none; transition: var(--transition);
+    }
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+    .modal-box {
+      background: var(--bg-surface); border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg); width: 100%; max-width: 600px;
+      max-height: 90vh; overflow-y: auto; padding: 28px;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7);
+      transform: scale(0.95); transition: var(--transition);
+    }
+    .modal-overlay.active .modal-box { transform: scale(1); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .modal-footer { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+
+    /* 变量快捷提示标签 */
+    .chip-container { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .chip {
+      background: var(--bg-input); border: 1px solid var(--border-color);
+      padding: 3px 8px; border-radius: 4px; font-size: 11px; color: #a7f3d0;
+      cursor: pointer; user-select: none;
+    }
+    .chip:hover { border-color: var(--accent-primary); background: rgba(16, 185, 129, 0.1); }
+
+    /* 日志表格 */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+    th { padding: 12px 14px; background: rgba(255,255,255,0.02); color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border-color); }
+    td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+    tr:hover td { background: rgba(255,255,255,0.015); }
+    .code-snippet {
+      font-family: monospace; background: var(--bg-input); padding: 2px 6px; border-radius: 4px; color: #cbd5e1;
+    }
+
+    /* 提示消息 Toast */
+    #toast-container { position: fixed; top: 20px; right: 20px; z-index: 10000; }
+    .toast {
+      background: var(--bg-surface); border: 1px solid var(--border-color);
+      color: var(--text-main); padding: 12px 20px; border-radius: var(--radius-md);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5); margin-bottom: 10px;
+      display: flex; align-items: center; gap: 10px; font-size: 13px;
+      animation: slideIn .2s forwards;
+    }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  </style>
+</head>
+<body>
+
+  <!-- 登录页面模态 -->
+  <div id="login-page">
+    <div class="login-card">
+      <div class="login-icon">
+        <svg viewBox="0 0 24 24"><path d="M8.5 2C4.36 2 1 5.04 1 8.8c0 2.12 1.07 4.02 2.76 5.27-.12.63-.44 2.3-.47 2.45-.04.22.09.43.3.43.15 0 .28-.06.39-.14l2.95-1.95c.5.12 1.03.19 1.57.19.23 0 .46-.01.68-.03-.27-.67-.42-1.39-.42-2.14 0-3.37 3.03-6.11 6.74-6.11 1.04 0 2.01.21 2.89.6C17.47 4.3 13.34 2 8.5 2zm10 6.8c-3.26 0-5.9 2.42-5.9 5.4 0 1.67.84 3.17 2.17 4.15-.09.5-.35 1.81-.37 1.93-.03.17.07.34.24.34.12 0 .22-.05.31-.11l2.32-1.54c.39.1.81.15 1.23.15 3.26 0 5.9-2.42 5.9-5.4s-2.64-5.32-5.9-5.32z"/></svg>
+      </div>
+      <h1 class="login-title">ComWeChat 控制台</h1>
+      <p class="login-subtitle">微信机器人管理与自动化转发平台</p>
+      <form id="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label>管理账号</label>
+          <input type="text" id="login-user" class="form-control" placeholder="请输入管理员用户名" required value="admin">
+        </div>
+        <div class="form-group">
+          <label>访问密码</label>
+          <input type="password" id="login-pass" class="form-control" placeholder="请输入管理密码" required value="admin123">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top: 10px;">进入管理平台</button>
+      </form>
+      <p style="font-size: 11px; color: var(--text-muted); margin-top: 20px;">默认凭据: admin / admin123 (可在系统设置中修改)</p>
+    </div>
+  </div>
+
+  <!-- 顶栏 Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24"><path d="M8.5 2C4.36 2 1 5.04 1 8.8c0 2.12 1.07 4.02 2.76 5.27-.12.63-.44 2.3-.47 2.45-.04.22.09.43.3.43.15 0 .28-.06.39-.14l2.95-1.95c.5.12 1.03.19 1.57.19.23 0 .46-.01.68-.03-.27-.67-.42-1.39-.42-2.14 0-3.37 3.03-6.11 6.74-6.11 1.04 0 2.01.21 2.89.6C17.47 4.3 13.34 2 8.5 2zm10 6.8c-3.26 0-5.9 2.42-5.9 5.4 0 1.67.84 3.17 2.17 4.15-.09.5-.35 1.81-.37 1.93-.03.17.07.34.24.34.12 0 .22-.05.31-.11l2.32-1.54c.39.1.81.15 1.23.15 3.26 0 5.9-2.42 5.9-5.4s-2.64-5.32-5.9-5.32z"/></svg>
+      </div>
+      <div>
+        <div class="brand-title">ComWeChat 控制台</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div id="wechat-status-badge" class="status-badge">
+        <div class="dot dot-red"></div>
+        <span>正在检测状态...</span>
+      </div>
+      <button onclick="handleLogout()" class="btn btn-secondary btn-sm">退出</button>
+    </div>
+  </header>
+
+  <!-- 主布局 -->
+  <div class="app-container">
+    <aside>
+      <div class="nav-item active" onclick="switchTab('dashboard')">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>仪表盘</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('rules')">
+        <svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+        <span>转发规则</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('tester')">
+        <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>规则测试器</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('logs')">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span>转发日志</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('contacts')">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>群组与联系人</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('settings')">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>系统设置</span>
+      </div>
+    </aside>
+
+    <main>
+      <!-- TAB 1: 仪表盘 -->
+      <section id="tab-dashboard" class="tab-pane">
+        <div class="page-title-row">
+          <div>
+            <h2 class="page-heading">运行概览</h2>
+            <p class="page-subheading">实时掌握微信在线状态与消息转发指标</p>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openRuleModal()">+ 新增监控规则</button>
+        </div>
+
+        <div class="grid-stats">
+          <div class="stat-card">
+            <div class="stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            </div>
+            <div>
+              <div class="stat-lbl">微信在线状态</div>
+              <div id="stat-wechat-status" class="stat-val" style="font-size: 18px;">检测中...</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon-wrapper" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/></svg>
+            </div>
+            <div>
+              <div class="stat-lbl">生效中规则</div>
+              <div id="stat-active-rules" class="stat-val">0</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon-wrapper" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div>
+              <div class="stat-lbl">已监听群消息</div>
+              <div id="stat-total-received" class="stat-val">0</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon-wrapper" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </div>
+            <div>
+              <div class="stat-lbl">成功触发转发</div>
+              <div id="stat-total-forwarded" class="stat-val">0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">最近转发流水</div>
+            <button class="btn btn-secondary btn-sm" onclick="loadDashboard()">刷新</button>
+          </div>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>时间</th>
+                  <th>命中规则</th>
+                  <th>来源群聊</th>
+                  <th>发送人</th>
+                  <th>原始内容</th>
+                  <th>转发状态</th>
+                </tr>
+              </thead>
+              <tbody id="dashboard-logs-tbody">
+                <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">暂无转发日志</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: 转发规则 -->
+      <section id="tab-rules" class="tab-pane" style="display: none;">
+        <div class="page-title-row">
+          <div>
+            <h2 class="page-heading">群消息监控与转发规则</h2>
+            <p class="page-subheading">配置特定群消息的匹配逻辑（正则/关键词）与转发目标人</p>
+          </div>
+          <button class="btn btn-primary" onclick="openRuleModal()">+ 新建规则</button>
+        </div>
+
+        <div id="rules-container">
+          <div style="text-align: center; color: var(--text-muted); padding: 50px;">正在加载规则...</div>
+        </div>
+      </section>
+
+      <!-- TAB 3: 规则测试器 -->
+      <section id="tab-tester" class="tab-pane" style="display: none;">
+        <div class="page-title-row">
+          <div>
+            <h2 class="page-heading">规则实时调试器</h2>
+            <p class="page-subheading">无需在微信真机发消息，直接在网页输入模拟文本测试是否命中规则</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="form-group">
+            <label>1. 选择已有规则快速测试（或下方手动填写规则参数）</label>
+            <select id="test-rule-select" class="form-control" onchange="fillTesterFromRule(this.value)">
+              <option value="">-- 手动自定义测试 --</option>
+            </select>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label>匹配模式</label>
+              <select id="test-match-type" class="form-control">
+                <option value="regex">正则表达式 (Regex)</option>
+                <option value="keyword">包含关键词 (Keyword)</option>
+                <option value="exact">完全匹配 (Exact)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>匹配表达式 / 关键词</label>
+              <input type="text" id="test-pattern" class="form-control" placeholder="例如: (?i)(报错|故障|宕机)">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>转发消息模板</label>
+            <textarea id="test-template" class="form-control" rows="3">【群提醒】来源: {group_name} | 发件人: {sender_name}&#10;内容: {content}</textarea>
+          </div>
+
+          <div class="form-group">
+            <label>2. 模拟待测试的群消息内容</label>
+            <textarea id="test-content" class="form-control" rows="3" placeholder="输入一条群消息，例如：生产环境服务宕机了，请速速排查！"></textarea>
+          </div>
+
+          <button class="btn btn-primary" onclick="runTester()">立即执行匹配测试</button>
+
+          <div id="tester-result-box" style="margin-top: 20px; display: none;">
+            <div style="font-weight: 600; margin-bottom: 8px;">测试结果：</div>
+            <div id="tester-result-status" style="margin-bottom: 12px;"></div>
+            <label style="font-size: 13px; color: var(--text-muted);">转发生成预览内容：</label>
+            <pre id="tester-result-preview" style="background: var(--bg-card); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color); white-space: pre-wrap; margin-top: 6px; font-family: inherit; font-size: 13px; color: #a7f3d0;"></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: 转发日志 -->
+      <section id="tab-logs" class="tab-pane" style="display: none;">
+        <div class="page-title-row">
+          <div>
+            <h2 class="page-heading">转发事件日志</h2>
+            <p class="page-subheading">记录所有被规则捕获并触发转发的群消息详情</p>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-secondary btn-sm" onclick="loadLogs()">刷新</button>
+            <button class="btn btn-danger btn-sm" onclick="clearLogs()">清空日志</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 140px;">时间</th>
+                  <th>规则</th>
+                  <th>来源群聊</th>
+                  <th>发信人</th>
+                  <th>命中特征</th>
+                  <th>转发目标</th>
+                  <th>最终转发文本</th>
+                  <th>状态</th>
+                </tr>
+              </thead>
+              <tbody id="logs-tbody">
+                <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px;">暂无日志</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: 联系人与群聊 -->
+      <section id="tab-contacts" class="tab-pane" style="display: none;">
+        <div class="page-title-row">
+          <div>
+            <h2 class="page-heading">群聊与联系人库</h2>
+            <p class="page-subheading">查看当前微信登录账号的好友与已加入的群聊列表</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="loadContacts()">重新同步列表</button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <!-- 群聊列表 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">群聊列表 (<span id="chatrooms-count">0</span>)</div>
+              <input type="text" class="form-control" style="width: 160px; padding: 4px 8px; font-size: 12px;" placeholder="搜索群名..." oninput="filterList('chatrooms', this.value)">
+            </div>
+            <div id="chatrooms-list" style="max-height: 500px; overflow-y: auto;"></div>
+          </div>
+
+          <!-- 好友列表 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">好友与联系人 (<span id="friends-count">0</span>)</div>
+              <input type="text" class="form-control" style="width: 160px; padding: 4px 8px; font-size: 12px;" placeholder="搜索好友..." oninput="filterList('friends', this.value)">
+            </div>
+            <div id="friends-list" style="max-height: 500px; overflow-y: auto;"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 6: 系统设置 -->
+      <section id="tab-settings" class="tab-pane" style="display: none;">
+        <div class="page-title-row">
+          <div>
+            <h2 class="page-heading">系统设置</h2>
+            <p class="page-subheading">管理后台登录凭证与转发通用配置</p>
+          </div>
+        </div>
+
+        <div class="card" style="max-width: 600px;">
+          <form onsubmit="saveSettings(event)">
+            <div class="form-group">
+              <label>管理平台登录账号</label>
+              <input type="text" id="setting-user" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>修改管理平台密码 (留空则不修改)</label>
+              <input type="password" id="setting-pass" class="form-control" placeholder="输入新密码以修改">
+            </div>
+            <div class="form-group">
+              <label>默认转发消息模板</label>
+              <textarea id="setting-default-template" class="form-control" rows="4"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">保存设置</button>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 规则新增 / 编辑模态框 -->
+  <div id="rule-modal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="rule-modal-title" style="font-size: 18px; font-weight: 700;">新建消息转发规则</h3>
+        <button onclick="closeRuleModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 20px;">&times;</button>
+      </div>
+
+      <input type="hidden" id="edit-rule-id">
+
+      <div class="form-group">
+        <label>规则名称 *</label>
+        <input type="text" id="rule-name" class="form-control" placeholder="例如：重大故障提醒、销售商机同步" required>
+      </div>
+
+      <div class="form-group">
+        <label>监控范围 *</label>
+        <div style="display: flex; gap: 20px; margin-bottom: 8px;">
+          <label style="cursor: pointer;"><input type="radio" name="rule-group-mode" value="all" checked onchange="toggleGroupPicker(false)"> 监控全部群聊</label>
+          <label style="cursor: pointer;"><input type="radio" name="rule-group-mode" value="specific" onchange="toggleGroupPicker(true)"> 指定特定群聊</label>
+        </div>
+        <div id="specific-group-picker" style="display: none;">
+          <input type="text" id="rule-specific-groups" class="form-control" placeholder="输入群ID(多个以英文逗号分隔，如: xxxx@chatroom)">
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">可前往【群组与联系人】页面直接复制群聊 ID 填入此处</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 14px;">
+        <div class="form-group">
+          <label>匹配方式 *</label>
+          <select id="rule-match-type" class="form-control">
+            <option value="regex">正则表达式 (Regex)</option>
+            <option value="keyword">包含关键词 (Keyword)</option>
+            <option value="exact">完全一致 (Exact)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>匹配规则 / 正则表达式 *</label>
+          <input type="text" id="rule-pattern" class="form-control" placeholder="例如: (?i)(报错|故障|宕机|报警)" required>
+        </div>
+      </div>
+
+      <!-- 快速预设标签 -->
+      <div style="margin-bottom: 16px;">
+        <label style="font-size: 12px; color: var(--text-muted);">常用规则预设点击填入：</label>
+        <div class="chip-container">
+          <span class="chip" onclick="applyPreset('regex', '(?i)(报错|故障|宕机|紧急|崩溃|502|500)')">系统故障词</span>
+          <span class="chip" onclick="applyPreset('regex', '(http|https)://[^\\s]+')">包含外链URL</span>
+          <span class="chip" onclick="applyPreset('regex', '1[3-9]\\d{9}')">包含手机号</span>
+          <span class="chip" onclick="applyPreset('keyword', '报价,价格,购买,怎么买,合作')">商务购买意向</span>
+          <span class="chip" onclick="applyPreset('exact', '打卡')">精准'打卡'</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>转发目标人 (接收者的 wxid) *</label>
+        <input type="text" id="rule-targets" class="form-control" placeholder="支持多个以逗号分隔，例如: filehelper,wxid_xxxx" required>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">输入 <code>filehelper</code> 代表微信文件传输助手，可在【群组与联系人】页面一键复制好友的 wxid</div>
+      </div>
+
+      <div class="form-group">
+        <label>转发消息自定义文本模板</label>
+        <textarea id="rule-template" class="form-control" rows="4">【群监控提醒】&#10;📌 来源群：{group_name}&#10;👤 发言人：{sender_name}&#10;⏰ 时间：{time}&#10;💬 原始内容：&#10;{content}</textarea>
+        <div class="chip-container">
+          <span class="chip" onclick="insertVariable('{group_name}')">来源群名: {group_name}</span>
+          <span class="chip" onclick="insertVariable('{sender_name}')">发言人: {sender_name}</span>
+          <span class="chip" onclick="insertVariable('{content}')">原始内容: {content}</span>
+          <span class="chip" onclick="insertVariable('{match_text}')">命中关键词: {match_text}</span>
+          <span class="chip" onclick="insertVariable('{time}')">时间: {time}</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeRuleModal()">取消</button>
+        <button class="btn btn-primary" onclick="submitRuleForm()">保存规则</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script>
+    let cachedContacts = { friends: [], chatrooms: [] };
+    let cachedRules = [];
+
+    // 提示通知 Toast
+    function showToast(msg, type = "info") {
+      const box = document.getElementById("toast-container");
+      const t = document.createElement("div");
+      t.className = "toast";
+      const icon = type === "success" ? "✅ " : (type === "error" ? "❌ " : "ℹ️ ");
+      t.innerText = icon + msg;
+      box.appendChild(t);
+      setTimeout(() => { t.remove(); }, 3500);
+    }
+
+    // 登录鉴权处理
+    async function checkAuth() {
+      try {
+        const res = await fetch("/api/auth_status");
+        const json = await res.json();
+        if (json.logged_in) {
+          document.getElementById("login-page").style.display = "none";
+          initDashboard();
+        } else {
+          document.getElementById("login-page").style.display = "flex";
+        }
+      } catch (e) {
+        document.getElementById("login-page").style.display = "flex";
+      }
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const u = document.getElementById("login-user").value.trim();
+      const p = document.getElementById("login-pass").value.trim();
+      try {
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: u, password: p })
+        });
+        const data = await res.json();
+        if (data.code === 0) {
+          showToast("登录成功", "success");
+          document.getElementById("login-page").style.display = "none";
+          initDashboard();
+        } else {
+          showToast(data.msg || "用户名或密码错误", "error");
+        }
+      } catch (err) {
+        showToast("请求失败，请检查网络", "error");
+      }
+    }
+
+    async function handleLogout() {
+      await fetch("/api/logout", { method: "POST" });
+      location.reload();
+    }
+
+    // 导航标签切换
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-pane").forEach(el => el.style.display = "none");
+      document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+
+      const targetPane = document.getElementById("tab-" + tabId);
+      if (targetPane) targetPane.style.display = "block";
+
+      const idx = ["dashboard", "rules", "tester", "logs", "contacts", "settings"].indexOf(tabId);
+      if (idx !== -1) {
+        document.querySelectorAll(".nav-item")[idx].classList.add("active");
+      }
+
+      if (tabId === "dashboard") loadDashboard();
+      if (tabId === "rules") loadRules();
+      if (tabId === "logs") loadLogs();
+      if (tabId === "contacts") loadContacts();
+      if (tabId === "settings") loadSettings();
+      if (tabId === "tester") populateTesterSelect();
+    }
+
+    // 仪表盘数据加载
+    async function initDashboard() {
+      loadDashboard();
+      // 启动状态轮询
+      setInterval(updateStatusBadge, 10000);
+    }
+
+    async function updateStatusBadge() {
+      try {
+        const res = await fetch("/api/status");
+        const json = await res.json();
+        if (json.code === 0) {
+          const s = json.data;
+          const badge = document.getElementById("wechat-status-badge");
+          if (s.wechat_online) {
+            const nick = s.self_info.nickname || "微信在线";
+            badge.innerHTML = `<div class="dot dot-green"></div><span>微信在线: ${nick}</span>`;
+            document.getElementById("stat-wechat-status").innerText = "已登录";
+            document.getElementById("stat-wechat-status").style.color = "#10b981";
+          } else {
+            badge.innerHTML = `<div class="dot dot-red"></div><span>微信未登录 (请在 VNC 扫码)</span>`;
+            document.getElementById("stat-wechat-status").innerText = "未连接";
+            document.getElementById("stat-wechat-status").style.color = "#ef4444";
+          }
+          document.getElementById("stat-active-rules").innerText = s.active_rules;
+          document.getElementById("stat-total-received").innerText = s.stats.total_received || 0;
+          document.getElementById("stat-total-forwarded").innerText = s.stats.total_forwarded || 0;
+        }
+      } catch (e) {}
+    }
+
+    async function loadDashboard() {
+      await updateStatusBadge();
+      try {
+        const res = await fetch("/api/logs?limit=5");
+        const json = await res.json();
+        const tbody = document.getElementById("dashboard-logs-tbody");
+        if (json.data && json.data.length > 0) {
+          tbody.innerHTML = json.data.map(l => `
+            <tr>
+              <td>${l.time.split(" ")[1] || l.time}</td>
+              <td><span class="badge badge-keyword">${escapeHtml(l.rule_name || "未命名")}</span></td>
+              <td><b>${escapeHtml(l.group_name)}</b></td>
+              <td>${escapeHtml(l.sender_name)}</td>
+              <td><span class="code-snippet">${escapeHtml(truncate(l.content, 26))}</span></td>
+              <td><span class="badge ${l.status === 'success' ? 'badge-success' : 'badge-danger'}">${l.status === 'success' ? '已转发' : '失败'}</span></td>
+            </tr>
+          `).join("");
+        } else {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">暂无转发日志</td></tr>`;
+        }
+      } catch (e) {}
+    }
+
+    // 规则管理
+    async function loadRules() {
+      const container = document.getElementById("rules-container");
+      try {
+        const res = await fetch("/api/rules");
+        const json = await res.json();
+        cachedRules = json.data || [];
+
+        if (cachedRules.length === 0) {
+          container.innerHTML = `
+            <div class="card" style="text-align: center; padding: 40px;">
+              <p style="color: var(--text-muted); margin-bottom: 16px;">当前尚未添加任何群消息转发规则</p>
+              <button class="btn btn-primary btn-sm" onclick="openRuleModal()">立即创建第一条规则</button>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = cachedRules.map(r => {
+          const typeBadge = r.match_type === 'regex' ? 'badge-regex' : (r.match_type === 'exact' ? 'badge-exact' : 'badge-keyword');
+          const typeName = r.match_type === 'regex' ? '正则匹配' : (r.match_type === 'exact' ? '完全匹配' : '包含关键词');
+          const groupDesc = r.group_mode === 'all' ? '全部群聊' : `指定群(${r.groups ? r.groups.length : 0}个)`;
+          const targetsDesc = (r.targets || []).map(t => t.name || t.wxid).join(", ") || "未指定";
+
+          return `
+            <div class="rule-item">
+              <div class="rule-info">
+                <div class="rule-name-row">
+                  <span class="rule-name">${escapeHtml(r.name)}</span>
+                  <span class="badge ${typeBadge}">${typeName}</span>
+                  <span class="badge" style="background: rgba(255,255,255,0.06); color: var(--text-muted);">范围: ${groupDesc}</span>
+                </div>
+                <div class="rule-meta">
+                  <div>匹配表达式: <code class="code-snippet">${escapeHtml(r.pattern)}</code></div>
+                  <div>转发目标: <b style="color: #6ee7b7;">${escapeHtml(targetsDesc)}</b></div>
+                </div>
+              </div>
+              <div class="rule-actions">
+                <label class="switch" title="切换启用状态">
+                  <input type="checkbox" ${r.enabled ? 'checked' : ''} onchange="toggleRule('${r.id}', this.checked)">
+                  <span class="slider"></span>
+                </label>
+                <button class="btn btn-secondary btn-sm" onclick="editRule('${r.id}')">编辑</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteRule('${r.id}')">删除</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+      } catch (e) {
+        container.innerHTML = `<div style="color: var(--danger); padding: 20px;">加载规则失败: ${e}</div>`;
+      }
+    }
+
+    async function toggleRule(id, enabled) {
+      await fetch(`/api/rules/${id}/toggle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled })
+      });
+      showToast(enabled ? "规则已启用" : "规则已禁用", "info");
+    }
+
+    async function deleteRule(id) {
+      if (!confirm("确定要删除这条监控规则吗？")) return;
+      await fetch(`/api/rules/${id}`, { method: "DELETE" });
+      showToast("规则已删除", "success");
+      loadRules();
+    }
+
+    function openRuleModal(isEdit = false) {
+      document.getElementById("rule-modal").classList.add("active");
+      if (!isEdit) {
+        document.getElementById("rule-modal-title").innerText = "新建消息转发规则";
+        document.getElementById("edit-rule-id").value = "";
+        document.getElementById("rule-name").value = "";
+        document.getElementById("rule-pattern").value = "";
+        document.getElementById("rule-targets").value = "filehelper";
+        document.getElementById("rule-match-type").value = "regex";
+        document.getElementById("rule-specific-groups").value = "";
+        document.querySelector("input[name='rule-group-mode'][value='all']").checked = true;
+        toggleGroupPicker(false);
+      }
+    }
+
+    function closeRuleModal() {
+      document.getElementById("rule-modal").classList.remove("active");
+    }
+
+    function toggleGroupPicker(show) {
+      document.getElementById("specific-group-picker").style.display = show ? "block" : "none";
+    }
+
+    function applyPreset(type, pattern) {
+      document.getElementById("rule-match-type").value = type;
+      document.getElementById("rule-pattern").value = pattern;
+    }
+
+    function insertVariable(v) {
+      const textarea = document.getElementById("rule-template");
+      textarea.value += v;
+      textarea.focus();
+    }
+
+    function editRule(id) {
+      const r = cachedRules.find(x => x.id === id);
+      if (!r) return;
+      openRuleModal(true);
+      document.getElementById("rule-modal-title").innerText = "编辑消息转发规则";
+      document.getElementById("edit-rule-id").value = r.id;
+      document.getElementById("rule-name").value = r.name || "";
+      document.getElementById("rule-pattern").value = r.pattern || "";
+      document.getElementById("rule-match-type").value = r.match_type || "regex";
+      document.getElementById("rule-template").value = r.template || "";
+
+      const targets = (r.targets || []).map(t => t.wxid || t).join(",");
+      document.getElementById("rule-targets").value = targets;
+
+      const isSpecific = r.group_mode === "specific";
+      document.querySelector(`input[name='rule-group-mode'][value='${isSpecific ? "specific" : "all"}']`).checked = true;
+      toggleGroupPicker(isSpecific);
+      if (isSpecific && r.groups) {
+        document.getElementById("rule-specific-groups").value = r.groups.map(g => g.id || g).join(",");
+      }
+    }
+
+    async function submitRuleForm() {
+      const id = document.getElementById("edit-rule-id").value;
+      const name = document.getElementById("rule-name").value.trim();
+      const pattern = document.getElementById("rule-pattern").value.trim();
+      const match_type = document.getElementById("rule-match-type").value;
+      const template = document.getElementById("rule-template").value.trim();
+      const group_mode = document.querySelector("input[name='rule-group-mode']:checked").value;
+      const targetsStr = document.getElementById("rule-targets").value.trim();
+
+      if (!name || !pattern || !targetsStr) {
+        showToast("请填写完整的规则名称、匹配表达式和转发目标人", "error");
+        return;
+      }
+
+      const targets = targetsStr.split(/[,，]/).map(t => t.trim()).filter(Boolean).map(wxid => ({
+        wxid: wxid,
+        name: wxid === 'filehelper' ? '文件传输助手' : wxid
+      }));
+
+      const groups = group_mode === "specific" 
+        ? document.getElementById("rule-specific-groups").value.split(/[,，]/).map(g => g.trim()).filter(Boolean).map(gid => ({ id: gid, name: gid }))
+        : [];
+
+      const payload = {
+        name, pattern, match_type, template, group_mode, targets, groups, enabled: true
+      };
+
+      try {
+        const url = id ? `/api/rules/${id}` : "/api/rules";
+        const method = id ? "PUT" : "POST";
+        const res = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.code === 0) {
+          showToast(id ? "规则修改成功" : "规则创建成功", "success");
+          closeRuleModal();
+          loadRules();
+        } else {
+          showToast(data.msg || "保存失败", "error");
+        }
+      } catch (e) {
+        showToast("网络请求异常: " + e, "error");
+      }
+    }
+
+    // 规则测试器
+    function populateTesterSelect() {
+      const select = document.getElementById("test-rule-select");
+      select.innerHTML = '<option value="">-- 手动自定义测试 --</option>' + cachedRules.map(r => `
+        <option value="${r.id}">${escapeHtml(r.name)} (${r.pattern})</option>
+      `).join("");
+    }
+
+    function fillTesterFromRule(ruleId) {
+      if (!ruleId) return;
+      const r = cachedRules.find(x => x.id === ruleId);
+      if (!r) return;
+      document.getElementById("test-match-type").value = r.match_type || "regex";
+      document.getElementById("test-pattern").value = r.pattern || "";
+      document.getElementById("test-template").value = r.template || "";
+    }
+
+    async function runTester() {
+      const pattern = document.getElementById("test-pattern").value.trim();
+      const match_type = document.getElementById("test-match-type").value;
+      const template = document.getElementById("test-template").value;
+      const sample_text = document.getElementById("test-content").value;
+
+      if (!pattern) {
+        showToast("请输入匹配表达式", "error");
+        return;
+      }
+      if (!sample_text) {
+        showToast("请输入待测试的模拟群消息", "error");
+        return;
+      }
+
+      const payload = {
+        sample_text,
+        sample_group: "技术交流核心群",
+        sample_sender: "张三(研发)",
+        rule: { pattern, match_type, template, name: "模拟测试规则" }
+      };
+
+      const res = await fetch("/api/rules/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      const box = document.getElementById("tester-result-box");
+      const statusEl = document.getElementById("tester-result-status");
+      const previewEl = document.getElementById("tester-result-preview");
+
+      box.style.display = "block";
+      if (json.data.matched) {
+        statusEl.innerHTML = `<span class="badge badge-success" style="font-size: 13px; padding: 4px 10px;">✅ 成功命中规则！特征内容: [ ${escapeHtml(json.data.match_text)} ]</span>`;
+        previewEl.innerText = json.data.preview_text;
+      } else {
+        statusEl.innerHTML = `<span class="badge badge-danger" style="font-size: 13px; padding: 4px 10px;">❌ 未命中规则（该消息不会被转发）</span>`;
+        previewEl.innerText = "(无转发内容)";
+      }
+    }
+
+    // 转发日志
+    async function loadLogs() {
+      const tbody = document.getElementById("logs-tbody");
+      try {
+        const res = await fetch("/api/logs?limit=100");
+        const json = await res.json();
+        const logs = json.data || [];
+        if (logs.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 40px;">暂无日志</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = logs.map(l => {
+          const targets = (l.targets || []).map(t => `${t.target}(${t.status})`).join(", ") || "-";
+          return `
+            <tr>
+              <td>${l.time}</td>
+              <td><b>${escapeHtml(l.rule_name || "-")}</b></td>
+              <td>${escapeHtml(l.group_name)}</td>
+              <td>${escapeHtml(l.sender_name)}</td>
+              <td><span class="code-snippet">${escapeHtml(l.match_text || "-")}</span></td>
+              <td>${escapeHtml(targets)}</td>
+              <td><span class="code-snippet" title="${escapeHtml(l.forward_content)}">${escapeHtml(truncate(l.forward_content, 30))}</span></td>
+              <td><span class="badge ${l.status === 'success' ? 'badge-success' : 'badge-danger'}">${l.status === 'success' ? '成功' : '失败'}</span></td>
+            </tr>
+          `;
+        }).join("");
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--danger);">加载日志失败: ${e}</td></tr>`;
+      }
+    }
+
+    async function clearLogs() {
+      if (!confirm("确定要清空全部转发日志吗？")) return;
+      await fetch("/api/logs", { method: "DELETE" });
+      showToast("日志已清空", "success");
+      loadLogs();
+    }
+
+    // 联系人与群聊
+    async function loadContacts() {
+      try {
+        const res = await fetch("/api/contacts");
+        const json = await res.json();
+        cachedContacts = json.data || { friends: [], chatrooms: [] };
+        renderContactList("chatrooms", cachedContacts.chatrooms);
+        renderContactList("friends", cachedContacts.friends);
+        document.getElementById("chatrooms-count").innerText = cachedContacts.chatrooms.length;
+        document.getElementById("friends-count").innerText = cachedContacts.friends.length;
+      } catch (e) {
+        showToast("加载联系人列表失败", "error");
+      }
+    }
+
+    function renderContactList(type, list) {
+      const container = document.getElementById(type + "-list");
+      if (list.length === 0) {
+        container.innerHTML = `<div style="color: var(--text-muted); text-align: center; padding: 20px;">暂无数据</div>`;
+        return;
+      }
+      container.innerHTML = list.map(item => `
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.03);">
+          <div>
+            <div style="font-weight: 500; font-size: 13px;">${escapeHtml(item.display_name)}</div>
+            <div style="font-size: 11px; color: var(--text-muted);">${escapeHtml(item.wxid)}</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="copyText('${item.wxid}')" title="复制 ID">复制 ID</button>
+        </div>
+      `).join("");
+    }
+
+    function filterList(type, query) {
+      const q = query.toLowerCase();
+      const list = cachedContacts[type] || [];
+      const filtered = list.filter(item => 
+        (item.display_name && item.display_name.toLowerCase().includes(q)) ||
+        (item.wxid && item.wxid.toLowerCase().includes(q))
+      );
+      renderContactList(type, filtered);
+    }
+
+    function copyText(txt) {
+      navigator.clipboard.writeText(txt);
+      showToast("已复制到剪贴板: " + txt, "success");
+    }
+
+    // 系统设置
+    async function loadSettings() {
+      try {
+        const res = await fetch("/api/settings");
+        const json = await res.json();
+        if (json.code === 0) {
+          document.getElementById("setting-user").value = json.data.admin_user || "";
+          document.getElementById("setting-default-template").value = json.data.default_template || "";
+        }
+      } catch (e) {}
+    }
+
+    async function saveSettings(e) {
+      e.preventDefault();
+      const u = document.getElementById("setting-user").value.trim();
+      const p = document.getElementById("setting-pass").value.trim();
+      const t = document.getElementById("setting-default-template").value.trim();
+
+      const payload = { admin_user: u, default_template: t };
+      if (p) payload.admin_pass = p;
+
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.code === 0) {
+        showToast("设置保存成功", "success");
+        document.getElementById("setting-pass").value = "";
+      } else {
+        showToast("保存失败: " + data.msg, "error");
+      }
+    }
+
+    // 工具函数
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+    function truncate(str, len) {
+      if (!str) return "";
+      return str.length > len ? str.substring(0, len) + "..." : str;
+    }
+
+    // 页面初始化
+    window.addEventListener("DOMContentLoaded", () => {
+      checkAuth();
+    });
+  </script>
+</body>
+</html>

@@ -21,17 +21,31 @@ docker run \
 ```
 
 ### 参数说明
-* 端口 5905: VNC 服务的端口(无法/无需修改)
+* 端口 5905: VNC 服务的端口(用于连接扫码登录)
+* 端口 8000: Web 机器人管理控制台端口 (浏览器直接访问)
 * network host: 使用宿主机网络(在 Linux Docker 环境下使用)
-* 环境变量 VNCPASS: 连接 VNC 的密码（可自定义，建议在服务器上使用本镜像的话设置得难一点）
-* 环境变量 COMWECHAT: [ComWeChatRobot](https://github.com/ljc545w/ComWeChatRobot/releases)具体版本的动态库文件压缩包(右键复制发布的文件的下载链接)【不设置此参数则默认为`3.7.0.30-0.0.5`的链接】
-* 目录映射 `WeChat Files`: 微信收到的图片/文件存储的目录(可以取消目录映射)
-* 目录映射 `Application Data`: 微信数据目录(可以取消目录映射)
+* 环境变量 VNCPASS: 连接 VNC 的密码（默认 YourSafeVNCPassword）
+* 环境变量 ADMIN_USER: Web 控制台管理账号（默认 admin）
+* 环境变量 ADMIN_PASS: Web 控制台管理密码（默认 admin123）
+* 环境变量 WEB_PORT: Web 控制台监听端口（默认 8000）
+* 环境变量 COMWECHAT: [ComWeChatRobot](https://github.com/ljc545w/ComWeChatRobot/releases) 动态库文件压缩包下载链接
+* 目录映射 `./data:/data`: 机器人规则配置及转发日志数据持久化目录
 
 ## 如何使用
-1. 运行上方命令启动镜像(更推荐使用 [docker-compose](./docker-compose.yaml) )
-2. 连接上 VNC 扫码登陆微信(建议扫码登陆后把微信的版本号弹窗等关闭)
-3. 使用 python 与微信通信(示例文件 [test.py](./test.py) )
+1. 使用 [docker-compose](./docker-compose.yaml) 启动容器：
+   ```bash
+   docker-compose up -d
+   ```
+2. 连接 VNC (宿主机 IP:5905) 扫码登录微信（容器内置自动跳过版本检查补丁，100% 扫码登录成功）。
+3. 打开浏览器访问 `http://<服务器IP>:8000` 进入微信机器人管理控制台：
+   - 默认账号: `admin`，默认密码: `admin123`
+   - **功能特性**：
+     - **实时运行看板**：微信在线状态监控、消息收发统计指标；
+     - **群消息监控与转发规则**：支持按指定群或全部群监听；支持正则表达式、包含关键词、完全匹配；
+     - **自定义转发模板**：支持群名 `{group_name}`、发信人 `{sender_name}`、原始内容 `{content}` 等变量替换；
+     - **规则实时测试器**：可在 Web 端直接输入模拟群消息，即时预览正则是否命中及转发渲染效果；
+     - **群聊与联系人库**：一键浏览当前微信好友与群聊 ID，支持一键复制；
+     - **完整转发流水日志**：记录所有捕获与转发事件。
 
 
 ## 鸣谢

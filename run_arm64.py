@@ -88,8 +88,20 @@ class DockerWechatHook:
         print("3. 版本号已就绪，启动 WeChatHook 注入程序...", flush=True)
         self.reg_hook = subprocess.Popen(['box86','/home/user/wine/bin/wine','/comwechat/http/WeChatHook.exe'])
 
+    def run_web_admin(self):
+        print("4. 启动微信机器人管理平台 Web 服务 (端口 8000)...", flush=True)
+        try:
+            self.web_admin = subprocess.Popen(['python3', '/web_admin/app.py'])
+        except Exception as e:
+            print(f"启动 Web 管理控制台异常: {e}", flush=True)
+
     def exit_container(self):
         print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')+ ' 正在退出容器...', flush=True)
+        try:
+            print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')+ ' 退出Web控制台...', flush=True)
+            os.kill(self.web_admin.pid, signal.SIGTERM)
+        except:
+            pass
         try:
             print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')+ ' 退出微信...', flush=True)
             os.kill(self.wechat.pid, signal.SIGTERM)
@@ -113,7 +125,8 @@ class DockerWechatHook:
         self.run_vnc()
         self.run_wechat()
         self.run_hook()
-        print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')+ ' 🎉 容器已完全就绪，请使用 VNC (端口 5905) 扫码登录！', flush=True)
+        self.run_web_admin()
+        print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')+ ' 🎉 容器已完全就绪，请使用 VNC (端口 5905) 扫码登录，并在浏览器访问 http://<服务器IP>:8000 进入管理平台！', flush=True)
         try:
             self.wechat.wait()
         except Exception:

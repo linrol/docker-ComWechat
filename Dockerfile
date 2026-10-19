@@ -18,10 +18,14 @@ ENV WINEPREFIX=/home/user/.wine \
     PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=utf-8 \
     NO_AT_BRIDGE=1 \
+    ADMIN_USER=admin \
+    ADMIN_PASS=admin123 \
+    WEB_PORT=8000 \
+    DATA_DIR=/data \
     COMWECHAT=https://github.com/ljc545w/ComWeChatRobot/releases/download/3.7.0.30-0.1.1-pre/3.7.0.30-0.1.1-pre.zip
 
-# 提示 vnc 使用的端口， dll 的端口自行映射
-EXPOSE 5905
+# 提示 vnc 使用的端口，web 控制台端口
+EXPOSE 5905 8000
 
 RUN if grep -q "bullseye" /etc/os-release 2>/dev/null; then \
         echo "Acquire::Check-Valid-Until false;" > /etc/apt/apt.conf.d/99no-check-valid-until && \
@@ -35,12 +39,16 @@ RUN if grep -q "bullseye" /etc/os-release 2>/dev/null; then \
     mesa-utils \
     procps \
     pev \
-    pulseaudio-utils -y
+    pulseaudio-utils \
+    python3-flask \
+    python3-requests -y && \
+    mkdir -p /data
 
 ADD wine/simsun.ttc /home/user/.wine/drive_c/windows/Fonts/simsun.ttc
 ADD wine/微信.lnk /home/user/.wine/drive_c/users/Public/Desktop/微信.lnk
 ADD wine/system.reg wine/user.reg wine/userdef.reg /home/user/.wine/
 ADD WeChatHook.exe /
+COPY web_admin /web_admin
 
 # 动态拷贝对应架构的启动脚本，并统一命名为 /run.py
 COPY run_${TARGETARCH}.py /run.py
