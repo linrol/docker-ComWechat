@@ -57,7 +57,7 @@ class WeChatClient:
             "nickname": ["wxNickName", "NickName", "nickname", "nick_name", "nick", "name"],
             "alias": ["wxNumber", "Alias", "alias", "custom_account", "wechat_id"],
             "wxid": ["wxId", "wxid", "UserName", "userName", "user_name", "wx_id"],
-            "remark": ["Remark", "remark", "remark_name", "remarkName", "conRemark"]
+            "remark": ["wxRemark", "Remark", "remark", "remark_name", "remarkName", "conRemark"]
         }
 
         keys_to_check = list(alias_pool.get(field_type, [field_type]))
@@ -132,16 +132,21 @@ class WeChatClient:
     def get_chatroom_member_names(self, chatroom_id, max_count=3):
         """对未命名群聊，获取其前几位成员昵称以生成友好群名"""
         try:
+            # 官方 API 25 返回格式: {"members": "wxid1^Gwxid2^Gwxid3", "result": "OK"}
             res = self.call_api(25, {"chatroom_id": chatroom_id})
-            members_raw = res.get("data") or res.get("member_list") or []
+            members_raw = res.get("members") or res.get("data") or res.get("member_list") or []
             member_wxids = []
-            if isinstance(members_raw, list):
+            if isinstance(members_raw, str):
+                member_wxids = [x.strip() for x in members_raw.split("^G") if x.strip()] or [x.strip() for x in members_raw.split(",") if x.strip()]
+            elif isinstance(members_raw, list):
                 for m in members_raw:
                     wid = m if isinstance(m, str) else (m.get("wxid") if isinstance(m, dict) else "")
                     if wid:
                         member_wxids.append(wid)
-            elif isinstance(members_raw, str):
-                member_wxids = [x.strip() for x in members_raw.split("^G") if x.strip()] or members_raw.split(",")
+            elif isinstance(members_raw, dict):
+                sub_m = members_raw.get("members") or ""
+                if isinstance(sub_m, str):
+                    member_wxids = [x.strip() for x in sub_m.split("^G") if x.strip()]
 
             names = []
             for wid in member_wxids[:max_count]:
