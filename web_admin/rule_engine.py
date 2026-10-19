@@ -156,76 +156,63 @@ class RuleEngine:
 
         data = msg.get("data") if isinstance(msg.get("data"), dict) else msg
 
-        # 1. 提取消息类型
+        # 1. 过滤自己发出的消息，避免机器人转发时触发规则导致死循环刷屏
+        is_send_msg = data.get("isSendMsg") if "isSendMsg" in data else msg.get("isSendMsg")
+        if is_send_msg == 1:
+            return
+
+        # 2. 提取消息类型，仅处理文本消息 (type == 1)
         msg_type = data.get("type") or data.get("msg_type") or 1
-        # 如果嵌套在 msg 字典中
         if isinstance(data.get("msg"), dict):
             inner_msg = data.get("msg")
             msg_type = inner_msg.get("type", msg_type)
 
-        # 仅处理文本消息 (type == 1)
         if msg_type != 1:
             return
 
-        # 2. 提取消息文本内容（兼容 content, msg, message）
+        # 3. 提取消息正文（官方优先字段为 message / msg）
         content = ""
-        raw_msg_field = data.get("msg") or data.get("content") or data.get("message") or ""
+        raw_msg_field = data.get("message") or data.get("msg") or data.get("content") or ""
         if isinstance(raw_msg_field, dict):
-            content = raw_msg_field.get("content") or raw_msg_field.get("msg") or ""
+            content = raw_msg_field.get("content") or raw_msg_field.get("msg") or raw_msg_field.get("message") or ""
         elif isinstance(raw_msg_field, str):
-            content = raw_msg_field
+            content = raw_msg_field.strip()
 
         if not content:
             return
 
-        # 3. 智能提取群聊 ID（在所有字段中寻找以 @chatroom 结尾的值）
+        # 4. 严格按照 ComWeChatRobot 官方规范识别群聊与发言人:
+        # 官方协议中：群消息时 sender 为群ID (xxx@chatroom)，wxid 为群内真实发言人 (wxid_xxx)
+        raw_sender = str(data.get("sender") or "").strip()
+        raw_wxid = str(data.get("wxid") or "").strip()
+
         group_id = ""
-        potential_keys = ["receiver", "roomid", "from_group", "chatroom_id", "sender", "wxid", "to_user", "from_user"]
-        for k in potential_keys:
-            val = data.get(k)
-            if isinstance(val, str) and val.endswith("@chatroom"):
-                group_id = val
-                break
+        sender_id = ""
 
-        # 深入内层字典查找
-        if not group_id and isinstance(data.get("msg"), dict):
-            for k in potential_keys:
-                val = data["msg"].get(k)
-                if isinstance(val, str) and val.endswith("@chatroom"):
+        if raw_sender.endswith("@chatroom"):
+            group_id = raw_sender
+            sender_id = raw_wxid if not raw_wxid.endswith("@chatroom") else ""
+        elif "@chatroom" in raw_sender:
+            group_id = raw_sender
+            sender_id = raw_wxid
+        else:
+            # 容错：检查备用字段
+            for k in ["roomid", "receiver", "from_group", "chatroom_id"]:
+                val = str(data.get(k) or "").strip()
+                if val.endswith("@chatroom"):
                     group_id = val
-                    break
-
-        # 全量遍历查找 @chatroom
-        if not group_id:
-            for v in data.values():
-                if isinstance(v, str) and v.endswith("@chatroom"):
-                    group_id = v
+                    sender_id = raw_wxid or raw_sender
                     break
 
         if not group_id:
             # 非群消息，跳过
             return
 
-        # 4. 提取发信人 ID
-        sender_id = ""
-        # 常见群消息格式形如: "wxid_xxx:\n消息正文"
-        if ":\n" in content:
-            parts = content.split(":\n", 1)
-            candidate_id = parts[0].strip()
-            if candidate_id.startswith("wxid_") or "@" not in candidate_id:
-                sender_id = candidate_id
-                content = parts[1]
-
-        if not sender_id:
-            # 从 sender / from_user 提取非群聊 ID 的发信人
-            for k in ["sender", "from_user", "wxid", "from_wxid"]:
-                val = data.get(k)
-                if isinstance(val, str) and not val.endswith("@chatroom") and val:
-                    sender_id = val
-                    break
+        if not sender_id or sender_id.endswith("@chatroom"):
+            sender_id = raw_wxid if (raw_wxid and not raw_wxid.endswith("@chatroom")) else "unknown"
 
         group_name = wechat_client.resolve_name(group_id)
-        sender_name = wechat_client.resolve_name(sender_id, chatroom_id=group_id) if sender_id else "群成员"
+        sender_name = wechat_client.resolve_name(sender_id, chatroom_id=group_id) if sender_id != "unknown" else "群成员"
 
         print(f"[RuleEngine] 群消息识别成功 -> 群: {group_name} ({group_id}), 发言人: {sender_name} ({sender_id}), 内容: {content}", flush=True)
 

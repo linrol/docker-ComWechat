@@ -25,7 +25,13 @@ class WeChatClient:
 
     def get_self_info(self):
         res = self.call_api(1)
-        return res.get("data", res)
+        data = res.get("data", res)
+        # 兼容官方 wxNickName 与通用 nickname
+        if isinstance(data, dict):
+            nick = self._extract_field(data, "nickname")
+            if nick:
+                data["nickname"] = nick
+        return data
 
     def send_text(self, wxid, text):
         data = {"wxid": wxid, "msg": text}
@@ -39,18 +45,42 @@ class WeChatClient:
         return self.call_api(10, {})
 
     @staticmethod
-    def _extract_field(item, *keys):
-        """大小写不敏感提取字段值，兼顾 dict 结构"""
+    def _extract_field(item, field_type, *extra_keys):
+        """
+        全量兼容官方带 wx 前缀字段（wxNickName, wxNumber, wxId 等）及通用命名
+        """
         if not isinstance(item, dict):
             return ""
-        for k in keys:
-            if k in item and item[k]:
-                return str(item[k]).strip()
-        lower_map = {k.lower(): v for k, v in item.items() if v}
-        for k in keys:
+
+        # 内置官方与常用同义词映射池
+        alias_pool = {
+            "nickname": ["wxNickName", "NickName", "nickname", "nick_name", "nick", "name"],
+            "alias": ["wxNumber", "Alias", "alias", "custom_account", "wechat_id"],
+            "wxid": ["wxId", "wxid", "UserName", "userName", "user_name", "wx_id"],
+            "remark": ["Remark", "remark", "remark_name", "remarkName", "conRemark"]
+        }
+
+        keys_to_check = list(alias_pool.get(field_type, [field_type]))
+        for k in extra_keys:
+            if k not in keys_to_check:
+                keys_to_check.append(k)
+
+        # 1. 优先精确匹配
+        for k in keys_to_check:
+            if k in item and item[k] is not None:
+                val = str(item[k]).strip()
+                if val:
+                    return val
+
+        # 2. 大小写不敏感匹配
+        lower_map = {k.lower(): v for k, v in item.items() if v is not None}
+        for k in keys_to_check:
             lk = k.lower()
-            if lk in lower_map and lower_map[lk]:
-                return str(lower_map[lk]).strip()
+            if lk in lower_map and lower_map[lk] is not None:
+                val = str(lower_map[lk]).strip()
+                if val:
+                    return val
+
         return ""
 
     def get_contacts_from_db(self):
@@ -74,12 +104,12 @@ class WeChatClient:
                 for row in data_rows:
                     user_name, nick, remark, alias = "", "", "", ""
                     if isinstance(row, dict):
-                        user_name = self._extract_field(row, "UserName", "userName", "wxid")
-                        nick = self._extract_field(row, "NickName", "nickName", "nickname")
-                        remark = self._extract_field(row, "Remark", "remark")
-                        alias = self._extract_field(row, "Alias", "alias")
+                        user_name = self._extract_field(row, "wxid")
+                        nick = self._extract_field(row, "nickname")
+                        remark = self._extract_field(row, "remark")
+                        alias = self._extract_field(row, "alias")
                     elif isinstance(row, (list, tuple)) and len(row) >= 4:
-                        # 兼容数据库返回二维数组的情况: [UserName, NickName, Remark, Alias]
+                        # 兼容数据库返回二维数组: [UserName, NickName, Remark, Alias]
                         user_name = str(row[0]).strip() if row[0] else ""
                         nick = str(row[1]).strip() if row[1] else ""
                         remark = str(row[2]).strip() if row[2] else ""
@@ -137,7 +167,7 @@ class WeChatClient:
 
         if isinstance(raw_list, list) and raw_list:
             for it in raw_list:
-                wid = self._extract_field(it, "wxid", "UserName", "wx_id")
+                wid = self._extract_field(it, "wxid")
                 if wid:
                     items.append(it)
                     merged_ids.add(wid)
@@ -158,26 +188,27 @@ class WeChatClient:
         now = time.time()
 
         for item in items:
-            wxid = self._extract_field(item, "wxid", "UserName", "wx_id", "user_name")
+            wxid = self._extract_field(item, "wxid")
             if not wxid:
                 continue
 
             db_info = db_map.get(wxid, {})
-            nickname = self._extract_field(item, "nickname", "NickName", "nick_name") or db_info.get("nickname", "")
-            remark = self._extract_field(item, "remark", "Remark", "remark_name") or db_info.get("remark", "")
-            alias = self._extract_field(item, "alias", "Alias", "custom_account") or db_info.get("alias", "")
+            # 全量提取昵称（支持 wxNickName, NickName, nickname 等）
+            nickname = self._extract_field(item, "nickname") or db_info.get("nickname", "")
+            remark = self._extract_field(item, "remark") or db_info.get("remark", "")
+            alias = self._extract_field(item, "alias") or db_info.get("alias", "")
 
             is_chatroom = wxid.endswith("@chatroom")
 
-            # 3. 如果昵称仍为空，尝试通过 API 18 从内存缓存精准点查
+            # 3. 如果昵称仍为空，尝试通过 API 18 从内存缓存精准点查 (官方返回 wxNickName/wxNumber)
             if not nickname and not remark:
                 try:
                     cache_res = self.call_api(18, {"wxid": wxid})
                     c_data = cache_res.get("data", {})
                     if isinstance(c_data, dict):
-                        nickname = self._extract_field(c_data, "NickName", "nickname") or nickname
-                        remark = self._extract_field(c_data, "Remark", "remark") or remark
-                        alias = self._extract_field(c_data, "Alias", "alias") or alias
+                        nickname = self._extract_field(c_data, "nickname") or nickname
+                        remark = self._extract_field(c_data, "remark") or remark
+                        alias = self._extract_field(c_data, "alias") or alias
                 except Exception:
                     pass
 
@@ -247,12 +278,12 @@ class WeChatClient:
             except Exception:
                 pass
 
-        # 尝试通过 API 18 从内存缓存查
+        # 尝试通过 API 18 从内存缓存查 (匹配官方 wxNickName)
         try:
             res = self.call_api(18, {"wxid": wxid})
             data = res.get("data", {})
             if isinstance(data, dict):
-                nick = self._extract_field(data, "NickName", "nickname", "Remark", "remark")
+                nick = self._extract_field(data, "nickname") or self._extract_field(data, "remark")
                 if nick:
                     self._name_cache[wxid] = nick
                     return nick
