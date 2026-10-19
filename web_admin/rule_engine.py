@@ -252,15 +252,15 @@ class RuleEngine:
             }
             forward_text = self._render_template(rule.get("template", ""), ctx)
 
-            # 执行转发
+            # 执行多目标批量转发
             targets = rule.get("targets", [])
             forward_results = []
-            for t in targets:
+            for idx, t in enumerate(targets):
                 target_wxid = t["wxid"] if isinstance(t, dict) else t
                 target_name = t.get("name", target_wxid) if isinstance(t, dict) else target_wxid
                 try:
                     res = wechat_client.send_text(target_wxid, forward_text)
-                    success = res.get("code") == 0 or res.get("is_send") == 1 or res.get("result") == "OK"
+                    success = res.get("result") == "OK" or res.get("msg") == 1 or res.get("code") == 0 or res.get("is_send") == 1
                     forward_results.append({
                         "target": target_name,
                         "wxid": target_wxid,
@@ -278,6 +278,10 @@ class RuleEngine:
                         "wxid": target_wxid,
                         "status": "failed"
                     })
+
+                # 多目标连续发送时加入 0.3 秒间隔，防止底层发送调用过频丢包
+                if idx < len(targets) - 1:
+                    time.sleep(0.3)
 
             # 写入持久化日志
             overall_status = "success" if any(r["status"] == "success" for r in forward_results) else "failed"
