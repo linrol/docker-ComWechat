@@ -143,11 +143,12 @@ def clear_logs():
     db.clear_logs()
     return jsonify({"code": 0, "msg": "日志已清空"})
 
-# ==================== 手动测试发送接口 ====================
+# ==================== 手动发送微信消息接口 ====================
 
+@app.route("/api/send_message", methods=["POST"])
 @app.route("/api/send_test", methods=["POST"])
 @login_required
-def send_test_message():
+def send_message():
     data = request.get_json() or {}
     wxid = data.get("wxid", "").strip()
     msg = data.get("msg", "").strip()
@@ -155,7 +156,7 @@ def send_test_message():
         return jsonify({"code": 400, "msg": "接收人与消息内容不能为空"}), 400
 
     res = wechat_client.send_text(wxid, msg)
-    return jsonify({"code": 0, "msg": "发送请求已提交", "data": res})
+    return jsonify({"code": 0, "msg": "消息发送请求已提交", "data": res})
 
 # ==================== 系统设置接口 ====================
 
