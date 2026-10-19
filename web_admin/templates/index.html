@@ -273,6 +273,183 @@
       animation: slideIn .2s forwards;
     }
     @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    /* 多选选择器组件样式 */
+    .multi-select-wrapper {
+      position: relative;
+    }
+    .multi-select-box {
+      border: 1px solid var(--border-color);
+      background: var(--bg-input);
+      border-radius: var(--radius-md);
+      padding: 7px 10px;
+      transition: var(--transition);
+      cursor: text;
+    }
+    .multi-select-box:focus-within {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .selected-tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .selected-tags-container:empty {
+      margin-bottom: 0;
+    }
+    .target-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
+      padding: 3px 9px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 500;
+      user-select: none;
+    }
+    .target-tag.group-tag {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: rgba(99, 102, 241, 0.35);
+      color: #a5b4fc;
+    }
+    .target-tag.helper-tag {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.35);
+      color: #fcd34d;
+    }
+    .target-tag .tag-remove {
+      cursor: pointer;
+      font-size: 13px;
+      line-height: 1;
+      opacity: 0.7;
+      transition: opacity 0.15s, color 0.15s;
+    }
+    .target-tag .tag-remove:hover {
+      opacity: 1;
+      color: #ef4444;
+    }
+    .multi-select-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-main);
+      font-size: 13px;
+      padding: 3px 0;
+    }
+    .multi-select-input::placeholder {
+      color: var(--text-muted);
+    }
+    .custom-dropdown-panel {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      background: #1e293b;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      box-shadow: 0 16px 36px rgba(0,0,0,0.6);
+      z-index: 1050;
+      display: none;
+      max-height: 290px;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .custom-dropdown-panel.show {
+      display: flex;
+    }
+    .dropdown-tabs-header {
+      display: flex;
+      background: rgba(0,0,0,0.25);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .dropdown-tab-btn {
+      flex: 1;
+      text-align: center;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: var(--transition);
+      user-select: none;
+    }
+    .dropdown-tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255,255,255,0.02);
+    }
+    .dropdown-tab-btn.active {
+      color: #10b981;
+      font-weight: 600;
+      border-bottom: 2px solid #10b981;
+      background: rgba(16, 185, 129, 0.05);
+    }
+    .dropdown-items-scroll {
+      overflow-y: auto;
+      max-height: 240px;
+    }
+    .dropdown-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 14px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      transition: background 0.15s;
+    }
+    .dropdown-item-row:hover {
+      background: rgba(255,255,255,0.06);
+    }
+    .dropdown-item-row.selected {
+      background: rgba(16, 185, 129, 0.09);
+    }
+    .dropdown-item-row-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+    .item-icon-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .item-icon-badge.group { background: rgba(99, 102, 241, 0.15); color: #a5b4fc; }
+    .item-icon-badge.friend { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+    .item-icon-badge.helper { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .dropdown-item-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .dropdown-item-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-family: monospace;
+    }
+    .dropdown-item-check {
+      font-size: 15px;
+      color: #10b981;
+      font-weight: bold;
+      margin-left: 8px;
+    }
   </style>
 </head>
 <body>
@@ -609,9 +786,21 @@
           <label style="cursor: pointer;"><input type="radio" name="rule-group-mode" value="all" checked onchange="toggleGroupPicker(false)"> 监控全部群聊</label>
           <label style="cursor: pointer;"><input type="radio" name="rule-group-mode" value="specific" onchange="toggleGroupPicker(true)"> 指定特定群聊</label>
         </div>
-        <div id="specific-group-picker" style="display: none;">
-          <input type="text" id="rule-specific-groups" class="form-control" placeholder="输入群ID(多个以英文逗号分隔，如: xxxx@chatroom)">
-          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">可前往【群组与联系人】页面直接复制群聊 ID 填入此处</div>
+        <div id="specific-group-picker" style="display: none; margin-top: 8px;">
+          <div class="multi-select-wrapper" id="groups-multi-wrapper">
+            <div class="multi-select-box" onclick="focusMultiInput('groups')">
+              <div class="selected-tags-container" id="groups-tags-box"></div>
+              <input type="text" class="multi-select-input" id="groups-search-input" placeholder="点击选择群聊（支持多选与快速搜索）..." onfocus="openMultiDropdown('groups')" oninput="filterMultiDropdown('groups')">
+            </div>
+            <div class="custom-dropdown-panel" id="groups-dropdown-panel">
+              <div style="padding: 8px 12px; font-size: 11px; color: var(--text-muted); background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between;">
+                <span>选择要监控的群聊（点击勾选/取消）</span>
+                <span id="groups-dropdown-count">0 个群聊</span>
+              </div>
+              <div class="dropdown-items-scroll" id="groups-dropdown-scroll"></div>
+            </div>
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">可直接在上方勾选多个群聊，或在输入框输入群名实时搜索，也可按回车添加自定义群 ID</div>
         </div>
       </div>
 
@@ -643,9 +832,27 @@
       </div>
 
       <div class="form-group">
-        <label>转发目标人 (接收者的 wxid) *</label>
-        <input type="text" id="rule-targets" class="form-control" placeholder="支持多个以逗号分隔，例如: filehelper,wxid_xxxx" required>
-        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">输入 <code>filehelper</code> 代表微信文件传输助手，可在【群组与联系人】页面一键复制好友的 wxid</div>
+        <label style="display: flex; justify-content: space-between; align-items: center;">
+          <span>转发目标接收者 (支持多选群聊 / 联系人) *</span>
+          <span style="font-size: 11px; font-weight: normal; color: var(--accent-primary); cursor: pointer;" onclick="quickAddFilehelper()">+ 一键添加文件传输助手</span>
+        </label>
+        <div class="multi-select-wrapper" id="targets-multi-wrapper">
+          <div class="multi-select-box" onclick="focusMultiInput('targets')">
+            <div class="selected-tags-container" id="targets-tags-box"></div>
+            <input type="text" class="multi-select-input" id="targets-search-input" placeholder="点击选择群聊或联系人（可多选），或输入关键词过滤..." onfocus="openMultiDropdown('targets')" oninput="filterMultiDropdown('targets')">
+          </div>
+          <div class="custom-dropdown-panel" id="targets-dropdown-panel">
+            <div class="dropdown-tabs-header">
+              <div class="dropdown-tab-btn active" id="targets-tab-all" onclick="switchTargetsTab('all')">全部</div>
+              <div class="dropdown-tab-btn" id="targets-tab-chatrooms" onclick="switchTargetsTab('chatrooms')">👥 群聊</div>
+              <div class="dropdown-tab-btn" id="targets-tab-friends" onclick="switchTargetsTab('friends')">👤 联系人</div>
+            </div>
+            <div class="dropdown-items-scroll" id="targets-dropdown-scroll"></div>
+          </div>
+        </div>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">
+          支持同时勾选多个群聊和联系人；输入不在列表中的微信 ID 后按回车即可添加自定义目标。
+        </div>
       </div>
 
       <div class="form-group">
@@ -904,27 +1111,355 @@
       loadRules();
     }
 
+    // 规则编辑多选状态管理
+    let modalTargets = []; // [{wxid, name, type: 'helper'|'chatroom'|'friend'|'custom'}]
+    let modalGroups = [];  // [{id, name}]
+    let currentTargetsTab = 'all';
+
+    // 确保通讯录已加载，方便直接下拉勾选
+    async function ensureContactsLoaded() {
+      if (!cachedContacts || (!cachedContacts.friends?.length && !cachedContacts.chatrooms?.length)) {
+        await loadContacts();
+      }
+    }
+
+    function openMultiDropdown(type) {
+      ensureContactsLoaded().then(() => {
+        renderMultiDropdownList(type);
+        document.getElementById(`${type}-dropdown-panel`).classList.add("show");
+      });
+    }
+
+    function closeMultiDropdowns() {
+      document.querySelectorAll(".custom-dropdown-panel").forEach(p => p.classList.remove("show"));
+    }
+
+    document.addEventListener("click", function(e) {
+      if (!e.target.closest(".multi-select-wrapper")) {
+        closeMultiDropdowns();
+      }
+    });
+
+    function focusMultiInput(type) {
+      const inp = document.getElementById(`${type}-search-input`);
+      inp.focus();
+      openMultiDropdown(type);
+    }
+
+    function switchTargetsTab(tab) {
+      currentTargetsTab = tab;
+      document.querySelectorAll(".dropdown-tabs-header .dropdown-tab-btn").forEach(btn => btn.classList.remove("active"));
+      const activeBtn = document.getElementById(`targets-tab-${tab}`);
+      if (activeBtn) activeBtn.classList.add("active");
+      renderMultiDropdownList("targets");
+    }
+
+    function filterMultiDropdown(type) {
+      renderMultiDropdownList(type);
+    }
+
+    function renderMultiDropdownList(type) {
+      if (type === "targets") {
+        renderTargetsDropdownList();
+      } else if (type === "groups") {
+        renderGroupsDropdownList();
+      }
+    }
+
+    function renderTargetsDropdownList() {
+      const scroll = document.getElementById("targets-dropdown-scroll");
+      const keyword = (document.getElementById("targets-search-input").value || "").trim().toLowerCase();
+      let html = "";
+
+      const isSelected = (wxid) => modalTargets.some(t => t.wxid === wxid);
+
+      // 1. 快捷选项: 文件传输助手
+      const helperSelected = isSelected("filehelper");
+      if (currentTargetsTab === "all" || currentTargetsTab === "friends") {
+        if (!keyword || "文件传输助手".includes(keyword) || "filehelper".includes(keyword)) {
+          html += `
+            <div class="dropdown-item-row ${helperSelected ? 'selected' : ''}" onclick="toggleTargetItem('filehelper', '文件传输助手', 'helper')">
+              <div class="dropdown-item-row-left">
+                <div class="item-icon-badge helper">📁</div>
+                <div class="dropdown-item-info">
+                  <div class="dropdown-item-title">文件传输助手</div>
+                  <div class="dropdown-item-desc">ID: filehelper (微信官方自带传输通道)</div>
+                </div>
+              </div>
+              ${helperSelected ? '<span class="dropdown-item-check">✓</span>' : ''}
+            </div>
+          `;
+        }
+      }
+
+      // 2. 自定义输入支持（如果输入的关键字不在现有项中）
+      if (keyword && keyword !== "filehelper") {
+        const exactMatch = modalTargets.some(t => t.wxid.toLowerCase() === keyword);
+        html += `
+          <div class="dropdown-item-row" style="background: rgba(16, 185, 129, 0.05);" onclick="toggleTargetItem('${escapeHtml(keyword)}', '${escapeHtml(keyword)}', 'custom')">
+            <div class="dropdown-item-row-left">
+              <div class="item-icon-badge helper">➕</div>
+              <div class="dropdown-item-info">
+                <div class="dropdown-item-title" style="color: #6ee7b7;">使用自定义 ID: ${escapeHtml(keyword)}</div>
+                <div class="dropdown-item-desc">点击直接添加此自定义微信 ID 为转发目标</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // 3. 群聊列表
+      if (currentTargetsTab === "all" || currentTargetsTab === "chatrooms") {
+        const chatrooms = (cachedContacts.chatrooms || []).filter(c => {
+          if (!keyword) return true;
+          return (c.display_name && c.display_name.toLowerCase().includes(keyword)) ||
+                 (c.wxid && c.wxid.toLowerCase().includes(keyword));
+        });
+
+        if (chatrooms.length > 0 && currentTargetsTab === "all") {
+          html += `<div style="padding: 6px 14px; font-size: 11px; font-weight: 600; color: #a5b4fc; background: rgba(99, 102, 241, 0.08);">👥 群聊列表 (${chatrooms.length})</div>`;
+        }
+
+        chatrooms.forEach(c => {
+          const sel = isSelected(c.wxid);
+          html += `
+            <div class="dropdown-item-row ${sel ? 'selected' : ''}" onclick="toggleTargetItem('${escapeHtml(c.wxid)}', '${escapeHtml(c.display_name || c.wxid)}', 'chatroom')">
+              <div class="dropdown-item-row-left">
+                <div class="item-icon-badge group">👥</div>
+                <div class="dropdown-item-info">
+                  <div class="dropdown-item-title">${escapeHtml(c.display_name || c.wxid)}</div>
+                  <div class="dropdown-item-desc">群ID: ${escapeHtml(c.wxid)}</div>
+                </div>
+              </div>
+              ${sel ? '<span class="dropdown-item-check">✓</span>' : ''}
+            </div>
+          `;
+        });
+      }
+
+      // 4. 联系人列表
+      if (currentTargetsTab === "all" || currentTargetsTab === "friends") {
+        const friends = (cachedContacts.friends || []).filter(f => {
+          if (!keyword) return true;
+          return (f.display_name && f.display_name.toLowerCase().includes(keyword)) ||
+                 (f.alias && f.alias.toLowerCase().includes(keyword)) ||
+                 (f.wxid && f.wxid.toLowerCase().includes(keyword));
+        });
+
+        if (friends.length > 0 && currentTargetsTab === "all") {
+          html += `<div style="padding: 6px 14px; font-size: 11px; font-weight: 600; color: #38bdf8; background: rgba(56, 189, 248, 0.08);">👤 联系人列表 (${friends.length})</div>`;
+        }
+
+        friends.forEach(f => {
+          const sel = isSelected(f.wxid);
+          const sub = f.alias ? `微信号: ${f.alias} | ID: ${f.wxid}` : `ID: ${f.wxid}`;
+          html += `
+            <div class="dropdown-item-row ${sel ? 'selected' : ''}" onclick="toggleTargetItem('${escapeHtml(f.wxid)}', '${escapeHtml(f.display_name || f.wxid)}', 'friend')">
+              <div class="dropdown-item-row-left">
+                <div class="item-icon-badge friend">👤</div>
+                <div class="dropdown-item-info">
+                  <div class="dropdown-item-title">${escapeHtml(f.display_name || f.wxid)}</div>
+                  <div class="dropdown-item-desc">${escapeHtml(sub)}</div>
+                </div>
+              </div>
+              ${sel ? '<span class="dropdown-item-check">✓</span>' : ''}
+            </div>
+          `;
+        });
+      }
+
+      if (!html) {
+        html = `<div style="text-align: center; color: var(--text-muted); padding: 24px 10px; font-size: 13px;">无匹配的群聊或联系人</div>`;
+      }
+      scroll.innerHTML = html;
+    }
+
+    function toggleTargetItem(wxid, name, type) {
+      const idx = modalTargets.findIndex(t => t.wxid === wxid);
+      if (idx >= 0) {
+        modalTargets.splice(idx, 1);
+      } else {
+        modalTargets.push({ wxid, name, type });
+      }
+      document.getElementById("targets-search-input").value = "";
+      renderTargetTags();
+      renderTargetsDropdownList();
+    }
+
+    function removeTargetTag(wxid) {
+      modalTargets = modalTargets.filter(t => t.wxid !== wxid);
+      renderTargetTags();
+      renderTargetsDropdownList();
+    }
+
+    function renderTargetTags() {
+      const box = document.getElementById("targets-tags-box");
+      box.innerHTML = modalTargets.map(t => {
+        let tagClass = "target-tag";
+        let icon = "👤";
+        if (t.wxid === "filehelper" || t.type === "helper") {
+          tagClass += " helper-tag";
+          icon = "📁";
+        } else if (t.wxid.endsWith("@chatroom") || t.type === "chatroom") {
+          tagClass += " group-tag";
+          icon = "👥";
+        }
+        return `
+          <span class="${tagClass}">
+            <span>${icon} ${escapeHtml(t.name || t.wxid)}</span>
+            <span class="tag-remove" onclick="event.stopPropagation(); removeTargetTag('${escapeHtml(t.wxid)}')">&times;</span>
+          </span>
+        `;
+      }).join("");
+    }
+
+    function quickAddFilehelper() {
+      if (!modalTargets.some(t => t.wxid === "filehelper")) {
+        modalTargets.push({ wxid: "filehelper", name: "文件传输助手", type: "helper" });
+        renderTargetTags();
+        renderTargetsDropdownList();
+      }
+    }
+
+    // 监控群聊多选组件
+    function renderGroupsDropdownList() {
+      const scroll = document.getElementById("groups-dropdown-scroll");
+      const keyword = (document.getElementById("groups-search-input").value || "").trim().toLowerCase();
+      const countEl = document.getElementById("groups-dropdown-count");
+
+      const chatrooms = (cachedContacts.chatrooms || []).filter(c => {
+        if (!keyword) return true;
+        return (c.display_name && c.display_name.toLowerCase().includes(keyword)) ||
+               (c.wxid && c.wxid.toLowerCase().includes(keyword));
+      });
+
+      if (countEl) countEl.innerText = `${chatrooms.length} 个群聊可选`;
+
+      let html = "";
+      if (keyword) {
+        html += `
+          <div class="dropdown-item-row" style="background: rgba(99, 102, 241, 0.08);" onclick="toggleGroupItem('${escapeHtml(keyword)}', '${escapeHtml(keyword)}')">
+            <div class="dropdown-item-row-left">
+              <div class="item-icon-badge group">➕</div>
+              <div class="dropdown-item-info">
+                <div class="dropdown-item-title" style="color: #a5b4fc;">使用自定义群 ID: ${escapeHtml(keyword)}</div>
+                <div class="dropdown-item-desc">点击添加此自定义群 ID</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      chatrooms.forEach(c => {
+        const sel = modalGroups.some(g => g.id === c.wxid);
+        html += `
+          <div class="dropdown-item-row ${sel ? 'selected' : ''}" onclick="toggleGroupItem('${escapeHtml(c.wxid)}', '${escapeHtml(c.display_name || c.wxid)}')">
+            <div class="dropdown-item-row-left">
+              <div class="item-icon-badge group">👥</div>
+              <div class="dropdown-item-info">
+                <div class="dropdown-item-title">${escapeHtml(c.display_name || c.wxid)}</div>
+                <div class="dropdown-item-desc">群ID: ${escapeHtml(c.wxid)}</div>
+              </div>
+            </div>
+            ${sel ? '<span class="dropdown-item-check">✓</span>' : ''}
+          </div>
+        `;
+      });
+
+      if (!html) {
+        html = `<div style="text-align: center; color: var(--text-muted); padding: 24px 10px; font-size: 13px;">无匹配群聊</div>`;
+      }
+      scroll.innerHTML = html;
+    }
+
+    function toggleGroupItem(id, name) {
+      const idx = modalGroups.findIndex(g => g.id === id);
+      if (idx >= 0) {
+        modalGroups.splice(idx, 1);
+      } else {
+        modalGroups.push({ id, name });
+      }
+      document.getElementById("groups-search-input").value = "";
+      renderGroupTags();
+      renderGroupsDropdownList();
+    }
+
+    function removeGroupTag(id) {
+      modalGroups = modalGroups.filter(g => g.id !== id);
+      renderGroupTags();
+      renderGroupsDropdownList();
+    }
+
+    function renderGroupTags() {
+      const box = document.getElementById("groups-tags-box");
+      box.innerHTML = modalGroups.map(g => `
+        <span class="target-tag group-tag">
+          <span>👥 ${escapeHtml(g.name || g.id)}</span>
+          <span class="tag-remove" onclick="event.stopPropagation(); removeGroupTag('${escapeHtml(g.id)}')">&times;</span>
+        </span>
+      `).join("");
+    }
+
+    // 回车键快捷添加自定义目标 / 自定义群
+    document.addEventListener("DOMContentLoaded", () => {
+      const tInp = document.getElementById("targets-search-input");
+      if (tInp) {
+        tInp.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            const val = tInp.value.trim();
+            if (val) {
+              toggleTargetItem(val, val, val.endsWith("@chatroom") ? "chatroom" : (val === "filehelper" ? "helper" : "custom"));
+            }
+          }
+        });
+      }
+      const gInp = document.getElementById("groups-search-input");
+      if (gInp) {
+        gInp.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            const val = gInp.value.trim();
+            if (val) {
+              toggleGroupItem(val, val);
+            }
+          }
+        });
+      }
+    });
+
     function openRuleModal(isEdit = false) {
+      ensureContactsLoaded();
       document.getElementById("rule-modal").classList.add("active");
       if (!isEdit) {
         document.getElementById("rule-modal-title").innerText = "新建消息转发规则";
         document.getElementById("edit-rule-id").value = "";
         document.getElementById("rule-name").value = "";
         document.getElementById("rule-pattern").value = "";
-        document.getElementById("rule-targets").value = "filehelper";
         document.getElementById("rule-match-type").value = "regex";
-        document.getElementById("rule-specific-groups").value = "";
+        document.getElementById("targets-search-input").value = "";
+        document.getElementById("groups-search-input").value = "";
         document.querySelector("input[name='rule-group-mode'][value='all']").checked = true;
         toggleGroupPicker(false);
+
+        // 默认目标设为文件传输助手
+        modalTargets = [{ wxid: "filehelper", name: "文件传输助手", type: "helper" }];
+        modalGroups = [];
+        renderTargetTags();
+        renderGroupTags();
       }
     }
 
     function closeRuleModal() {
       document.getElementById("rule-modal").classList.remove("active");
+      closeMultiDropdowns();
     }
 
     function toggleGroupPicker(show) {
       document.getElementById("specific-group-picker").style.display = show ? "block" : "none";
+      if (show) {
+        ensureContactsLoaded().then(() => renderGroupsDropdownList());
+      }
     }
 
     function applyPreset(type, pattern) {
@@ -948,16 +1483,42 @@
       document.getElementById("rule-pattern").value = r.pattern || "";
       document.getElementById("rule-match-type").value = r.match_type || "regex";
       document.getElementById("rule-template").value = r.template || "";
+      document.getElementById("targets-search-input").value = "";
+      document.getElementById("groups-search-input").value = "";
 
-      const targets = (r.targets || []).map(t => t.wxid || t).join(",");
-      document.getElementById("rule-targets").value = targets;
+      // 智能回显转发目标
+      modalTargets = (r.targets || []).map(t => {
+        const wid = typeof t === "object" ? t.wxid : t;
+        let name = typeof t === "object" ? (t.name || wid) : wid;
+        let type = "custom";
+        if (wid === "filehelper") {
+          name = "文件传输助手";
+          type = "helper";
+        } else if (wid.endsWith("@chatroom")) {
+          type = "chatroom";
+          const matchChatroom = (cachedContacts.chatrooms || []).find(c => c.wxid === wid);
+          if (matchChatroom) name = matchChatroom.display_name || name;
+        } else {
+          type = "friend";
+          const matchFriend = (cachedContacts.friends || []).find(f => f.wxid === wid);
+          if (matchFriend) name = matchFriend.display_name || name;
+        }
+        return { wxid: wid, name, type };
+      });
+      renderTargetTags();
 
+      // 智能回显特定监控群
       const isSpecific = r.group_mode === "specific";
       document.querySelector(`input[name='rule-group-mode'][value='${isSpecific ? "specific" : "all"}']`).checked = true;
       toggleGroupPicker(isSpecific);
-      if (isSpecific && r.groups) {
-        document.getElementById("rule-specific-groups").value = r.groups.map(g => g.id || g).join(",");
-      }
+      modalGroups = (r.groups || []).map(g => {
+        const gid = typeof g === "object" ? (g.id || g.wxid) : g;
+        let name = typeof g === "object" ? (g.name || gid) : gid;
+        const matchChatroom = (cachedContacts.chatrooms || []).find(c => c.wxid === gid);
+        if (matchChatroom) name = matchChatroom.display_name || name;
+        return { id: gid, name };
+      });
+      renderGroupTags();
     }
 
     async function submitRuleForm() {
@@ -967,20 +1528,29 @@
       const match_type = document.getElementById("rule-match-type").value;
       const template = document.getElementById("rule-template").value.trim();
       const group_mode = document.querySelector("input[name='rule-group-mode']:checked").value;
-      const targetsStr = document.getElementById("rule-targets").value.trim();
 
-      if (!name || !pattern || !targetsStr) {
-        showToast("请填写完整的规则名称、匹配表达式和转发目标人", "error");
+      if (!name || !pattern) {
+        showToast("请填写完整的规则名称和匹配规则", "error");
         return;
       }
 
-      const targets = targetsStr.split(/[,，]/).map(t => t.trim()).filter(Boolean).map(wxid => ({
-        wxid: wxid,
-        name: wxid === 'filehelper' ? '文件传输助手' : wxid
+      if (modalTargets.length === 0) {
+        showToast("请至少选择一个转发目标（可直接选群聊、好友或文件传输助手）", "error");
+        return;
+      }
+
+      if (group_mode === "specific" && modalGroups.length === 0) {
+        showToast("已选择【指定特定群聊】，请至少勾选一个监控群聊", "error");
+        return;
+      }
+
+      const targets = modalTargets.map(t => ({
+        wxid: t.wxid,
+        name: t.name || t.wxid
       }));
 
       const groups = group_mode === "specific" 
-        ? document.getElementById("rule-specific-groups").value.split(/[,，]/).map(g => g.trim()).filter(Boolean).map(gid => ({ id: gid, name: gid }))
+        ? modalGroups.map(g => ({ id: g.id, name: g.name || g.id }))
         : [];
 
       const payload = {
