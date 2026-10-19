@@ -27,6 +27,7 @@ ENV WINEPREFIX=/home/user/.wine \
 # 提示 vnc 使用的端口，web 控制台端口
 EXPOSE 5905 8000
 
+# 1. 系统依赖与运行环境安装（基础层，永久缓存）
 RUN if grep -q "bullseye" /etc/os-release 2>/dev/null; then \
         echo "Acquire::Check-Valid-Until false;" > /etc/apt/apt.conf.d/99no-check-valid-until && \
         sed -i 's|security.debian.org/debian-security|archive.debian.org/debian-security|g' /etc/apt/sources.list && \
@@ -44,17 +45,16 @@ RUN if grep -q "bullseye" /etc/os-release 2>/dev/null; then \
     python3-requests -y && \
     mkdir -p /data
 
+# 2. 进程守护 dumb-init 下载（基础层，永久缓存）
+RUN wget --no-check-certificate -O /bin/dumb-init "https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_$(uname -m)" && \
+    chmod a+x /bin/dumb-init
+
+# 3. 字体与 Windows 注册表初始化（基础层，永久缓存）
 ADD wine/simsun.ttc /home/user/.wine/drive_c/windows/Fonts/simsun.ttc
 ADD wine/微信.lnk /home/user/.wine/drive_c/users/Public/Desktop/微信.lnk
 ADD wine/system.reg wine/user.reg wine/userdef.reg /home/user/.wine/
-ADD WeChatHook.exe /
-COPY web_admin /web_admin
 
-# 动态拷贝对应架构的启动脚本，并统一命名为 /run.py
-COPY run_${TARGETARCH}.py /run.py
-
-# wine install python3.8 (自动下载 Windows 便携版 Python 环境)
-COPY skip_wechat_version.py /home/user/.wine/drive_c/users/user/skip_wechat_version.py
+# 4. 下载并部署 Windows 便携版 Python 环境与 Pymem（基础层，耗时大，严格前置永久缓存）
 RUN chown -R root:root /home/user/.wine && \
     mkdir -p /home/user/.wine/drive_c/users/user/python && \
     wget --no-check-certificate -O /tmp/python.zip "https://www.python.org/ftp/python/3.8.10/python-3.8.10-embed-win32.zip" && \
@@ -65,20 +65,27 @@ RUN chown -R root:root /home/user/.wine && \
     wine /home/user/.wine/drive_c/users/user/python/python.exe -m pip --trusted-host pypi.python.org install Pymem && \
     rm -f /tmp/python.zip
 
-# COPY wine/Tencent.zip /Tencent.zip
+# 5. 下载并解压微信客户端包（基础层，100MB+，严格前置永久缓存）
 RUN wget --no-check-certificate -O /Tencent.zip "https://github.com/tom-snow/docker-ComWechat/releases/download/v0.2_wc3.7.0.30/Tencent.zip" && \
-    wget --no-check-certificate -O /bin/dumb-init "https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_$(uname -m)" && \
     mkdir -p "/home/user/WeChat Files" "/home/user/.wine/drive_c/users/user/Application Data" && \
-    chmod a+x /bin/dumb-init && \
-    chmod a+x /run.py && \
-    chmod a+x /home/user/.wine/drive_c/users/user/skip_wechat_version.py && \
     rm -rf "/home/user/.wine/drive_c/Program Files/Tencent/" && \
     unzip Tencent.zip && \
     mv wine/Tencent "/home/user/.wine/drive_c/Program Files/" && \
-    chown root:root -R /home/user/.wine && \
     apt autoremove -y && \
     apt clean && \
     rm -rf wine Tencent.zip /tmp/*
+
+# =========================================================================
+# 6. 业务代码层（频繁修改，全部沉底！修改代码绝不破坏以上 1~5 层的庞大缓存）
+# =========================================================================
+ADD WeChatHook.exe /
+COPY web_admin /web_admin
+COPY skip_wechat_version.py /home/user/.wine/drive_c/users/user/skip_wechat_version.py
+COPY run_${TARGETARCH}.py /run.py
+
+RUN chmod a+x /run.py && \
+    chmod a+x /home/user/.wine/drive_c/users/user/skip_wechat_version.py && \
+    chown root:root -R /home/user/.wine
 
 ENTRYPOINT [ "/bin/dumb-init" ]
 CMD ["/run.py", "start"]
