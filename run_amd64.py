@@ -79,11 +79,14 @@ class DockerWechatHook:
         vnc_pass = os.environ.get('VNCPASS', 'asdfgh123')
         if vncpasswd_bin:
             try:
-                passwd_output = subprocess.run([vncpasswd_bin, '-f'], input=vnc_pass.encode(), capture_output=True)
+                passwd_output = subprocess.run([vncpasswd_bin, '-f'], input=f"{vnc_pass}\n".encode(), capture_output=True)
                 if passwd_output.stdout:
                     with open('/root/.vnc/passwd', 'wb') as f:
                         f.write(passwd_output.stdout)
-                    os.chmod('/root/.vnc/passwd', 0o700)
+                    os.chmod('/root/.vnc/passwd', 0o600)
+                else:
+                    err_msg = passwd_output.stderr.decode('utf-8', errors='ignore') if passwd_output.stderr else '无输出'
+                    print(f"生成 VNC 密码未成功: {err_msg}", flush=True)
             except Exception as e:
                 print(f"生成 VNC 密码提示/异常: {e}", flush=True)
 
