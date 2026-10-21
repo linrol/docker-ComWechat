@@ -60,27 +60,17 @@ class DockerWechatHook:
                 f.write("True\n")
 
     def run_vnc(self):
-        # 补齐 vncpasswd 软链接
-        if os.path.exists('/usr/bin/vncpasswd') and not os.path.exists('/usr/bin/tigervncpasswd'):
-            try:
-                os.symlink('/usr/bin/vncpasswd', '/usr/bin/tigervncpasswd')
-            except Exception:
-                pass
-        if os.path.exists('/usr/bin/vncserver') and not os.path.exists('/usr/bin/tigervncserver'):
-            try:
-                os.symlink('/usr/bin/vncserver', '/usr/bin/tigervncserver')
-            except Exception:
-                pass
-
         # 根据 VNCPASS 环境变量生成 vncpasswd 文件
         os.makedirs('/root/.vnc', mode=755, exist_ok=True)
         vncpasswd_bin = (
             shutil.which('vncpasswd')
+            or shutil.which('tightvncpasswd')
             or shutil.which('tigervncpasswd')
             or '/usr/bin/vncpasswd'
         )
         vncserver_bin = (
             shutil.which('vncserver')
+            or shutil.which('tightvncserver')
             or shutil.which('tigervncserver')
             or '/usr/bin/vncserver'
         )
