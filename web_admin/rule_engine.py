@@ -77,14 +77,66 @@ class RuleEngine:
             print(f"[RuleEngine] 消息监听启动异常: {e}", flush=True)
 
     def _keep_hook_alive(self):
+        """
+        后台健康检查与主动心跳保活引擎：
+        1. 状态变迁监听：精准捕获登录/掉线事件并记录毫秒级时间戳日志
+        2. 主动探活心跳：定时给 filehelper 发送静默探针，打破凌晨公网 NAT 超时与连接挂死
+        3. 微信版本防封伪装：定期复查 API 35 维护最新版本欺骗
+        4. Hook 状态维持：确保崩溃或网络抖动后自动重新注入 Hook
+        """
         time.sleep(2)
+        last_online = None
+        last_heartbeat_time = 0
+        last_version_spoof_time = 0
+        heartbeat_interval = 600  # 每 10 分钟发送一次心跳打破 NAT 僵死
+
         while self._running:
             try:
-                if wechat_client.is_login():
-                    res = wechat_client.start_hook(self.hook_port)
-                    # print(f"[RuleEngine] 触发 Hook 注册 (127.0.0.1:{self.hook_port}) => {res}", flush=True)
-            except Exception:
-                pass
+                now_ts = time.time()
+                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                online = wechat_client.is_login()
+
+                # 1. 登录状态变迁监听与精确警报
+                if last_online is not None and online != last_online:
+                    if not online:
+                        print(f"[RuleEngine] 🚨 [CRITICAL] [{now_str}] 微信检测到已掉线！(内存状态由 在线 变为 离线)", flush=True)
+                    else:
+                        print(f"[RuleEngine] 🟢 [INFO] [{now_str}] 微信已检测到重新登录上线！", flush=True)
+                last_online = online
+
+                if online:
+                    # 2. 定期刷新 Hook 挂载
+                    wechat_client.start_hook(self.hook_port)
+
+                    # 3. 维护版本号防封伪装 (每小时检查一次)
+                    if now_ts - last_version_spoof_time > 3600:
+                        try:
+                            # 官方 API 35: 修改/维护伪装版本号
+                            wechat_client.call_api(35, {"version": "3.9.10.19"})
+                            last_version_spoof_time = now_ts
+                        except Exception:
+                            pass
+
+                    # 4. 主动探活心跳 (打破凌晨 NAT 超时假死)
+                    if now_ts - last_heartbeat_time > heartbeat_interval:
+                        try:
+                            # 向文件传输助手发送静默心跳，强制触发物理网卡向腾讯服务器的数据包往返
+                            res = wechat_client.send_text("filehelper", "[Heartbeat] keep-alive")
+                            if res.get("result") == "OK" or res.get("msg") == 1:
+                                # print(f"[RuleEngine] 💓 [{now_str}] 主动心跳探针发送成功，NAT 映射已刷新", flush=True)
+                                last_heartbeat_time = now_ts
+                            else:
+                                print(f"[RuleEngine] ⚠️ [{now_str}] 主动心跳发送响应异常: {res}", flush=True)
+                        except Exception as e_hb:
+                            print(f"[RuleEngine] ⚠️ [{now_str}] 主动心跳异常: {e_hb}", flush=True)
+                else:
+                    # 处于离线状态时每 10 秒提示一次
+                    # print(f"[RuleEngine] 等待微信登录中...", flush=True)
+                    pass
+
+            except Exception as e:
+                print(f"[RuleEngine] 保活轮询异常: {e}", flush=True)
+
             time.sleep(10)
 
     def get_stats(self):

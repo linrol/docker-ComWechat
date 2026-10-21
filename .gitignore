@@ -174,3 +174,4 @@ cython_debug/
 !/wine/winetricks.log
 /wine/Tencent/
 /volume/
+scratch/
