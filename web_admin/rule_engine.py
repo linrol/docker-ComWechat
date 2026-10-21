@@ -1,6 +1,7 @@
 import re
 import json
 import time
+import random
 import socketserver
 import threading
 from datetime import datetime
@@ -88,7 +89,7 @@ class RuleEngine:
         last_online = None
         last_heartbeat_time = 0
         last_version_spoof_time = 0
-        heartbeat_interval = 600  # 每 10 分钟发送一次心跳打破 NAT 僵死
+        heartbeat_interval = random.randint(300, 600)  # 随机 5~10 分钟，拟真化避开固定周期风控
 
         while self._running:
             try:
@@ -117,14 +118,15 @@ class RuleEngine:
                         except Exception:
                             pass
 
-                    # 4. 主动探活心跳 (打破凌晨 NAT 超时假死)
+                    # 4. 主动探活心跳 (打破凌晨 NAT 超时假死，随机 5~10 分钟发送一次)
                     if now_ts - last_heartbeat_time > heartbeat_interval:
                         try:
                             # 向文件传输助手发送静默心跳，强制触发物理网卡向腾讯服务器的数据包往返
                             res = wechat_client.send_text("filehelper", "[Heartbeat] keep-alive")
                             if res.get("result") == "OK" or res.get("msg") == 1:
-                                # print(f"[RuleEngine] 💓 [{now_str}] 主动心跳探针发送成功，NAT 映射已刷新", flush=True)
+                                # print(f"[RuleEngine] 💓 [{now_str}] 主动心跳探针发送成功，NAT 映射已刷新，下次间隔: {heartbeat_interval}s", flush=True)
                                 last_heartbeat_time = now_ts
+                                heartbeat_interval = random.randint(300, 600)  # 重新随机生成下次间隔 (5~10 分钟)
                             else:
                                 print(f"[RuleEngine] ⚠️ [{now_str}] 主动心跳发送响应异常: {res}", flush=True)
                         except Exception as e_hb:
