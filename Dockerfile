@@ -86,7 +86,16 @@ COPY run_${TARGETARCH}.py /run.py
 RUN chmod a+x /run.py && \
     chmod a+x /home/user/.wine/drive_c/users/user/skip_wechat_version.py && \
     (which vncpasswd >/dev/null 2>&1 || (apt update && apt --no-install-recommends install -y tightvncserver || true)) && \
-    chown root:root -R /home/user/.wine
+    mkdir -p "/root/Documents" \
+             "/home/user/Documents" \
+             "/home/user/.wine/drive_c/users/user/My Documents/WeChat Files" \
+             "/home/user/.wine/drive_c/users/user/Documents/WeChat Files" \
+             "/home/user/.wine/drive_c/users/root/My Documents/WeChat Files" \
+             "/home/user/.wine/drive_c/users/root/Documents/WeChat Files" \
+             "/home/user/.wine/drive_c/users/user/Application Data" \
+             "/home/user/.wine/drive_c/users/root/Application Data" && \
+    chown root:root -R /home/user/.wine && \
+    chmod -R 777 /home/user/.wine/drive_c/users /root/Documents /home/user/Documents
 
 ENTRYPOINT [ "/bin/dumb-init" ]
 CMD ["/run.py", "start"]

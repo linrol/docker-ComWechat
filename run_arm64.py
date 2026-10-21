@@ -59,6 +59,44 @@ class DockerWechatHook:
             with open("/dll_downloaded.txt", "w") as f:
                 f.write("True\n")
 
+    def fix_wechat_directories(self):
+        print("检查并初始化微信数据保存目录与权限...", flush=True)
+        dirs = [
+            "/root/Documents",
+            "/home/user/Documents",
+            "/home/user/WeChat Files",
+            "/home/user/.wine/drive_c/users/user/My Documents",
+            "/home/user/.wine/drive_c/users/user/Documents",
+            "/home/user/.wine/drive_c/users/user/My Documents/WeChat Files",
+            "/home/user/.wine/drive_c/users/user/Documents/WeChat Files",
+            "/home/user/.wine/drive_c/users/user/Application Data",
+            "/home/user/.wine/drive_c/users/user/Local Settings/Application Data",
+            "/home/user/.wine/drive_c/users/root/My Documents",
+            "/home/user/.wine/drive_c/users/root/Documents",
+            "/home/user/.wine/drive_c/users/root/My Documents/WeChat Files",
+            "/home/user/.wine/drive_c/users/root/Documents/WeChat Files",
+            "/home/user/.wine/drive_c/users/root/Application Data",
+            "/home/user/.wine/drive_c/users/root/Local Settings/Application Data",
+        ]
+        for d in dirs:
+            try:
+                if os.path.islink(d) and not os.path.exists(d):
+                    print(f"清理断裂符号链接: {d}", flush=True)
+                    os.unlink(d)
+                os.makedirs(d, mode=0o777, exist_ok=True)
+                os.chmod(d, 0o777)
+            except Exception as e:
+                print(f"初始化目录 {d} 提示: {e}", flush=True)
+
+        try:
+            subprocess.run(['chmod', '-R', '777', '/home/user/.wine/drive_c/users'], capture_output=True)
+            subprocess.run(['chmod', '-R', '777', '/root/Documents'], capture_output=True)
+            subprocess.run(['chmod', '-R', '777', '/home/user/Documents'], capture_output=True)
+            subprocess.run(['chmod', '-R', '777', '/home/user/WeChat Files'], capture_output=True)
+        except Exception:
+            pass
+        print("微信数据目录与权限已全部就绪！", flush=True)
+
     def run_vnc(self):
         # 根据 VNCPASS 环境变量生成 vncpasswd 文件
         os.makedirs('/root/.vnc', mode=755, exist_ok=True)
@@ -131,6 +169,7 @@ class DockerWechatHook:
         print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')+ ' 启动容器中...', flush=True)
         self.run_dbus()
         self.prepare()
+        self.fix_wechat_directories()
         self.run_vnc()
         self.run_wechat()
         self.run_hook()
