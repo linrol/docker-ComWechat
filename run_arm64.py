@@ -62,13 +62,34 @@ class DockerWechatHook:
     def run_vnc(self):
         # 根据 VNCPASS 环境变量生成 vncpasswd 文件
         os.makedirs('/root/.vnc', mode=755, exist_ok=True)
-        vncpasswd_bin = shutil.which('vncpasswd') or '/usr/bin/vncpasswd'
-        vncserver_bin = shutil.which('vncserver') or '/usr/bin/vncserver'
-        passwd_output = subprocess.run([vncpasswd_bin, '-f'], input=os.environ['VNCPASS'].encode(), capture_output=True)
-        with open('/root/.vnc/passwd', 'wb') as f:
-            f.write(passwd_output.stdout)
-        os.chmod('/root/.vnc/passwd', 0o700)
-        self.vnc = subprocess.Popen([vncserver_bin, '-localhost', 'no', '-xstartup', '/usr/bin/openbox', ':5'])
+        vncpasswd_bin = (
+            shutil.which('vncpasswd')
+            or shutil.which('tigervncpasswd')
+            or ('/usr/bin/tigervncpasswd' if os.path.exists('/usr/bin/tigervncpasswd') else None)
+            or ('/usr/bin/vncpasswd' if os.path.exists('/usr/bin/vncpasswd') else None)
+        )
+        vncserver_bin = (
+            shutil.which('vncserver')
+            or shutil.which('tigervncserver')
+            or ('/usr/bin/tigervncserver' if os.path.exists('/usr/bin/tigervncserver') else None)
+            or ('/usr/bin/vncserver' if os.path.exists('/usr/bin/vncserver') else None)
+        )
+        vnc_pass = os.environ.get('VNCPASS', 'asdfgh123')
+        if vncpasswd_bin:
+            try:
+                passwd_output = subprocess.run([vncpasswd_bin, '-f'], input=vnc_pass.encode(), capture_output=True)
+                if passwd_output.stdout:
+                    with open('/root/.vnc/passwd', 'wb') as f:
+                        f.write(passwd_output.stdout)
+                    os.chmod('/root/.vnc/passwd', 0o700)
+            except Exception as e:
+                print(f"生成 VNC 密码提示/异常: {e}", flush=True)
+
+        if vncserver_bin:
+            self.vnc = subprocess.Popen([vncserver_bin, '-localhost', 'no', '-xstartup', '/usr/bin/openbox', ':5'])
+        else:
+            print("警告: 未找到可用 vncserver 二进制文件", flush=True)
+            self.vnc = None
 
     def run_dbus(self):
         try:
@@ -112,7 +133,8 @@ class DockerWechatHook:
             pass
         try:
             print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')+ ' 退出VNC...', flush=True)
-            os.kill(self.vnc.pid, signal.SIGTERM)
+            if getattr(self, 'vnc', None):
+                os.kill(self.vnc.pid, signal.SIGTERM)
         except:
             pass
 

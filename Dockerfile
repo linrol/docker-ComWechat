@@ -85,6 +85,8 @@ COPY run_${TARGETARCH}.py /run.py
 
 RUN chmod a+x /run.py && \
     chmod a+x /home/user/.wine/drive_c/users/user/skip_wechat_version.py && \
+    ([ -f /usr/bin/tigervncserver ] && ln -sf /usr/bin/tigervncserver /usr/bin/vncserver || true) && \
+    ([ -f /usr/bin/tigervncpasswd ] && ln -sf /usr/bin/tigervncpasswd /usr/bin/vncpasswd || true) && \
     chown root:root -R /home/user/.wine
 
 ENTRYPOINT [ "/bin/dumb-init" ]
