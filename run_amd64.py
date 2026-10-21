@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import subprocess, os, signal, datetime, time
+import subprocess, os, signal, datetime, time, shutil
 from concurrent.futures import ThreadPoolExecutor
 executor = ThreadPoolExecutor()
 
@@ -64,12 +64,13 @@ class DockerWechatHook:
     def run_vnc(self):
         # 根据 VNCPASS 环境变量生成 vncpasswd 文件
         os.makedirs('/root/.vnc', mode=755, exist_ok=True)
-        passwd_output = subprocess.run(['/usr/bin/vncpasswd','-f'],input=os.environ['VNCPASS'].encode(),capture_output=True)
+        vncpasswd_bin = shutil.which('vncpasswd') or '/usr/bin/vncpasswd'
+        vncserver_bin = shutil.which('vncserver') or '/usr/bin/vncserver'
+        passwd_output = subprocess.run([vncpasswd_bin, '-f'], input=os.environ['VNCPASS'].encode(), capture_output=True)
         with open('/root/.vnc/passwd', 'wb') as f:
             f.write(passwd_output.stdout)
         os.chmod('/root/.vnc/passwd', 0o700)
-        self.vnc = subprocess.Popen(['/usr/bin/vncserver','-localhost',
-                                     'no', '-xstartup', '/usr/bin/openbox' ,':5'])
+        self.vnc = subprocess.Popen([vncserver_bin, '-localhost', 'no', '-xstartup', '/usr/bin/openbox', ':5'])
 
     def run_dbus(self):
         try:
