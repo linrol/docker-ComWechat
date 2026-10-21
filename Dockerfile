@@ -35,7 +35,7 @@ RUN if grep -q "bullseye" /etc/os-release 2>/dev/null; then \
         rm -f /etc/apt/sources.list.d/*opensuse* 2>/dev/null || true; \
     fi && \
     apt update && \
-    apt --no-install-recommends install wget unzip winbind tigervnc-standalone-server tigervnc-common openbox \
+    apt --no-install-recommends install wget unzip winbind tigervnc-standalone-server tigervnc-common tigervnc-tools openbox \
     dbus dbus-x11 \
     mesa-utils \
     procps \
@@ -85,6 +85,7 @@ COPY run_${TARGETARCH}.py /run.py
 
 RUN chmod a+x /run.py && \
     chmod a+x /home/user/.wine/drive_c/users/user/skip_wechat_version.py && \
+    (which tigervncpasswd >/dev/null 2>&1 || (apt update && apt --no-install-recommends install -y tigervnc-tools && rm -rf /var/lib/apt/lists/*)) && \
     ([ -f /usr/bin/tigervncserver ] && ln -sf /usr/bin/tigervncserver /usr/bin/vncserver || true) && \
     ([ -f /usr/bin/tigervncpasswd ] && ln -sf /usr/bin/tigervncpasswd /usr/bin/vncpasswd || true) && \
     chown root:root -R /home/user/.wine
