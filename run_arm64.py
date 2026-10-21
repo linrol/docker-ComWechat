@@ -95,6 +95,25 @@ class DockerWechatHook:
             subprocess.run(['chmod', '-R', '777', '/home/user/WeChat Files'], capture_output=True)
         except Exception:
             pass
+
+        # 禁用 XPlugin (Chromium 内核 / XWeb / ThumbPlayer)，防止 ARM/Wine 下 Chromium 崩溃拖垮主进程
+        for user_dir in ["/home/user/.wine/drive_c/users/root", "/home/user/.wine/drive_c/users/user"]:
+            app_data = os.path.join(user_dir, "Application Data", "Tencent", "WeChat")
+            xplugin = os.path.join(app_data, "XPlugin")
+            xweb = os.path.join(app_data, "xweb")
+            try:
+                if os.path.isdir(xplugin):
+                    shutil.rmtree(xplugin, ignore_errors=True)
+                if os.path.isdir(xweb):
+                    shutil.rmtree(xweb, ignore_errors=True)
+                os.makedirs(app_data, exist_ok=True)
+                if not os.path.exists(xplugin):
+                    with open(xplugin, "w") as f:
+                        f.write("")
+                    os.chmod(xplugin, 0o444)
+            except Exception as e:
+                print(f"禁用 XPlugin 提示: {e}", flush=True)
+
         print("微信数据目录与权限已全部就绪！", flush=True)
 
     def run_vnc(self):
@@ -126,7 +145,13 @@ class DockerWechatHook:
 
     def run_wechat(self):
         print("1. 启动微信进程...", flush=True)
-        self.wechat = subprocess.Popen(['box86','/home/user/wine/bin/wine','/home/user/.wine/drive_c/Program Files/Tencent/WeChat/WeChat.exe'])
+        env = os.environ.copy()
+        env['BOX86_EMULATED_LIBS'] = 'libresolv.so.2'
+        env['WINEDLLOVERRIDES'] = 'winealsa.drv=d'
+        self.wechat = subprocess.Popen(
+            ['box86','/home/user/wine/bin/wine','/home/user/.wine/drive_c/Program Files/Tencent/WeChat/WeChat.exe'],
+            env=env
+        )
         print("2. 同步卡点修改微信版本号，确保扫码前补丁 100% 生效...", flush=True)
         self.skip_version()
 

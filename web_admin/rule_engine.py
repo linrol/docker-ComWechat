@@ -87,8 +87,8 @@ class RuleEngine:
         """
         time.sleep(2)
         last_online = None
-        last_heartbeat_time = 0
-        last_version_spoof_time = 0
+        last_heartbeat_time = time.time()
+        last_version_spoof_time = time.time()
         heartbeat_interval = random.randint(300, 600)  # 随机 5~10 分钟，拟真化避开固定周期风控
 
         while self._running:
