@@ -180,6 +180,8 @@ def update_settings():
         update_data["admin_pass"] = data["admin_pass"].strip()
     if "default_template" in data:
         update_data["default_template"] = data["default_template"]
+    if "enable_heartbeat" in data:
+        update_data["enable_heartbeat"] = bool(data["enable_heartbeat"])
 
     db.save_config(update_data)
     return jsonify({"code": 0, "msg": "设置更新成功"})

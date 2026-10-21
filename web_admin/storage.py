@@ -26,10 +26,12 @@ class Storage:
     def _load_config(self):
         default_user = os.environ.get("ADMIN_USER", "admin")
         default_pass = os.environ.get("ADMIN_PASS", "admin123")
+        env_hb = os.environ.get("ENABLE_HEARTBEAT", "false").lower() in ("true", "1", "yes")
         default_config = {
             "admin_user": default_user,
             "admin_pass": default_pass,
             "web_port": int(os.environ.get("WEB_PORT", 8000)),
+            "enable_heartbeat": env_hb,
             "default_template": "【群消息提醒】\n📌 来源群：{group_name}\n👤 发送人：{sender_name}\n⏰ 时间：{time}\n💬 内容：\n{content}"
         }
         if os.path.exists(CONFIG_FILE):

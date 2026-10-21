@@ -118,8 +118,9 @@ class RuleEngine:
                         except Exception:
                             pass
 
-                    # 4. 主动探活心跳 (打破凌晨 NAT 超时假死，随机 5~10 分钟发送一次)
-                    if now_ts - last_heartbeat_time > heartbeat_interval:
+                    # 4. 主动探活心跳 (打破凌晨 NAT 超时假死，开关控制，默认关闭)
+                    enable_heartbeat = bool(db.config.get("enable_heartbeat", False))
+                    if enable_heartbeat and (now_ts - last_heartbeat_time > heartbeat_interval):
                         try:
                             # 向文件传输助手发送静默心跳，强制触发物理网卡向腾讯服务器的数据包往返
                             res = wechat_client.send_text("filehelper", "[Heartbeat] keep-alive")

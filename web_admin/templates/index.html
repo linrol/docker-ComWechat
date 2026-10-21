@@ -758,6 +758,15 @@
               <label>默认转发消息模板</label>
               <textarea id="setting-default-template" class="form-control" rows="4"></textarea>
             </div>
+            <div class="form-group" style="margin-top: 15px; margin-bottom: 20px;">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="setting-enable-heartbeat" style="width: 16px; height: 16px; cursor: pointer;">
+                <span style="font-weight: 600;">定时向文件助手发送心跳保活消息</span>
+              </label>
+              <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px; margin-bottom: 0;">
+                默认关闭。若网络环境较差导致长连接假死时可开启，开启后系统将随机每隔 5~10 分钟向文件传输助手发送一条静默探测心跳。
+              </p>
+            </div>
             <button type="submit" class="btn btn-primary">保存设置</button>
           </form>
         </div>
@@ -1808,6 +1817,7 @@
         if (json.code === 0) {
           document.getElementById("setting-user").value = json.data.admin_user || "";
           document.getElementById("setting-default-template").value = json.data.default_template || "";
+          document.getElementById("setting-enable-heartbeat").checked = !!json.data.enable_heartbeat;
         }
       } catch (e) {}
     }
@@ -1817,8 +1827,9 @@
       const u = document.getElementById("setting-user").value.trim();
       const p = document.getElementById("setting-pass").value.trim();
       const t = document.getElementById("setting-default-template").value.trim();
+      const hb = document.getElementById("setting-enable-heartbeat").checked;
 
-      const payload = { admin_user: u, default_template: t };
+      const payload = { admin_user: u, default_template: t, enable_heartbeat: hb };
       if (p) payload.admin_pass = p;
 
       const res = await fetch("/api/settings", {
