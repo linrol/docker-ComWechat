@@ -96,23 +96,27 @@ class DockerWechatHook:
         except Exception:
             pass
 
-        # 禁用 XPlugin (Chromium 内核 / XWeb / ThumbPlayer)，防止 ARM/Wine 下 Chromium 崩溃拖垮主进程
+        # 修复 glibc >= 2.34 下 libresolv 符号整合至 libc 导致 box86 dnsapi.so 找不到 res_query 的崩溃
+        resolv_path = "/usr/lib/arm-linux-gnueabihf/libresolv.so.2"
+        libc_path = "/usr/lib/arm-linux-gnueabihf/libc.so.6"
+        if os.path.exists(libc_path):
+            try:
+                if os.path.islink(resolv_path) or os.path.exists(resolv_path):
+                    os.remove(resolv_path)
+                os.symlink(libc_path, resolv_path)
+            except Exception as e:
+                print(f"修复 libresolv 符号软链接提示: {e}", flush=True)
+
         for user_dir in ["/home/user/.wine/drive_c/users/root", "/home/user/.wine/drive_c/users/user"]:
             app_data = os.path.join(user_dir, "Application Data", "Tencent", "WeChat")
             xplugin = os.path.join(app_data, "XPlugin")
-            xweb = os.path.join(app_data, "xweb")
             try:
-                if os.path.isdir(xplugin):
-                    shutil.rmtree(xplugin, ignore_errors=True)
-                if os.path.isdir(xweb):
-                    shutil.rmtree(xweb, ignore_errors=True)
-                os.makedirs(app_data, exist_ok=True)
-                if not os.path.exists(xplugin):
-                    with open(xplugin, "w") as f:
-                        f.write("")
-                    os.chmod(xplugin, 0o444)
-            except Exception as e:
-                print(f"禁用 XPlugin 提示: {e}", flush=True)
+                if os.path.isfile(xplugin):
+                    os.remove(xplugin)
+                os.makedirs(xplugin, mode=0o777, exist_ok=True)
+                os.chmod(xplugin, 0o777)
+            except Exception:
+                pass
 
         print("微信数据目录与权限已全部就绪！", flush=True)
 
@@ -146,8 +150,13 @@ class DockerWechatHook:
     def run_wechat(self):
         print("1. 启动微信进程...", flush=True)
         env = os.environ.copy()
-        env['BOX86_EMULATED_LIBS'] = 'libresolv.so.2'
+        env['BOX86_LD_PRELOAD'] = 'libresolv.so.2'
+        env['BOX86_DYNAREC_STRONGMEM'] = '1'
+        env['BOX86_DYNAREC_SAFEFLAGS'] = '1'
+        env['BOX86_DYNAREC_CALLRET'] = '0'
+        env['BOX86_DYNAREC_FASTNAN'] = '0'
         env['WINEDLLOVERRIDES'] = 'winealsa.drv=d'
+        self.wechat_env = env
         self.wechat = subprocess.Popen(
             ['box86','/home/user/wine/bin/wine','/home/user/.wine/drive_c/Program Files/Tencent/WeChat/WeChat.exe'],
             env=env
@@ -157,7 +166,11 @@ class DockerWechatHook:
 
     def run_hook(self):
         print("3. 版本号已就绪，启动 WeChatHook 注入程序...", flush=True)
-        self.reg_hook = subprocess.Popen(['box86','/home/user/wine/bin/wine','/comwechat/http/WeChatHook.exe'])
+        env = getattr(self, 'wechat_env', os.environ.copy())
+        self.reg_hook = subprocess.Popen(
+            ['box86','/home/user/wine/bin/wine','/comwechat/http/WeChatHook.exe'],
+            env=env
+        )
 
     def run_web_admin(self):
         print("4. 启动微信机器人管理平台 Web 服务 (端口 8000)...", flush=True)
