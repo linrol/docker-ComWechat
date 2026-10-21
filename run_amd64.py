@@ -109,7 +109,7 @@ class DockerWechatHook:
         if vncserver_bin:
             cmd = [vncserver_bin, '-localhost', 'no', '-xstartup', '/usr/bin/openbox', ':5']
             if not has_passwd and not os.path.exists('/root/.vnc/passwd'):
-                cmd.extend(['-SecurityTypes', 'None'])
+                cmd.extend(['-SecurityTypes', 'None', '--I-KNOW-THIS-IS-INSECURE'])
             self.vnc = subprocess.Popen(cmd)
         else:
             print("警告: 未找到可用 vncserver 二进制文件", flush=True)

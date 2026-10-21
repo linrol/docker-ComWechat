@@ -85,6 +85,7 @@ COPY run_${TARGETARCH}.py /run.py
 
 RUN chmod a+x /run.py && \
     chmod a+x /home/user/.wine/drive_c/users/user/skip_wechat_version.py && \
+    (which vncpasswd >/dev/null 2>&1 || (apt update && apt --no-install-recommends install -y tightvncserver || true)) && \
     ([ -f /usr/bin/vncpasswd ] && ln -sf /usr/bin/vncpasswd /usr/bin/tigervncpasswd || true) && \
     ([ -f /usr/bin/tigervncpasswd ] && ln -sf /usr/bin/tigervncpasswd /usr/bin/vncpasswd || true) && \
     ([ -f /usr/bin/vncserver ] && ln -sf /usr/bin/vncserver /usr/bin/tigervncserver || true) && \
