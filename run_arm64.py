@@ -62,6 +62,7 @@ class DockerWechatHook:
     def run_vnc(self):
         # 根据 VNCPASS 环境变量生成 vncpasswd 文件
         os.makedirs('/root/.vnc', mode=755, exist_ok=True)
+        os.makedirs('/root/.config/tigervnc', mode=755, exist_ok=True)
         vncpasswd_bin = (
             shutil.which('vncpasswd')
             or shutil.which('tigervncpasswd')
@@ -75,13 +76,16 @@ class DockerWechatHook:
             or ('/usr/bin/vncserver' if os.path.exists('/usr/bin/vncserver') else None)
         )
         vnc_pass = os.environ.get('VNCPASS', 'asdfgh123')
+        has_passwd = False
         if vncpasswd_bin:
             try:
                 passwd_output = subprocess.run([vncpasswd_bin, '-f'], input=f"{vnc_pass}\n".encode(), capture_output=True)
                 if passwd_output.stdout:
-                    with open('/root/.vnc/passwd', 'wb') as f:
-                        f.write(passwd_output.stdout)
-                    os.chmod('/root/.vnc/passwd', 0o600)
+                    for p in ['/root/.vnc/passwd', '/root/.config/tigervnc/passwd']:
+                        with open(p, 'wb') as f:
+                            f.write(passwd_output.stdout)
+                        os.chmod(p, 0o600)
+                    has_passwd = True
                 else:
                     err_msg = passwd_output.stderr.decode('utf-8', errors='ignore') if passwd_output.stderr else '无输出'
                     print(f"生成 VNC 密码未成功: {err_msg}", flush=True)
@@ -89,7 +93,10 @@ class DockerWechatHook:
                 print(f"生成 VNC 密码提示/异常: {e}", flush=True)
 
         if vncserver_bin:
-            self.vnc = subprocess.Popen([vncserver_bin, '-localhost', 'no', '-xstartup', '/usr/bin/openbox', ':5'])
+            cmd = [vncserver_bin, '-localhost', 'no', '-xstartup', '/usr/bin/openbox', ':5']
+            if not has_passwd and not os.path.exists('/root/.vnc/passwd'):
+                cmd.extend(['-SecurityTypes', 'None'])
+            self.vnc = subprocess.Popen(cmd)
         else:
             print("警告: 未找到可用 vncserver 二进制文件", flush=True)
             self.vnc = None
@@ -151,9 +158,10 @@ class DockerWechatHook:
         self.run_web_admin()
         print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')+ ' 🎉 容器已完全就绪，请使用 VNC (端口 5905) 扫码登录，并在浏览器访问 http://<服务器IP>:8000 进入管理平台！', flush=True)
         try:
-            self.wechat.wait()
-        except Exception:
-            pass
+            while True:
+                time.sleep(5)
+        except (KeyboardInterrupt, SystemExit):
+            self.exit_container()
 
 
 if __name__ == '__main__' :
